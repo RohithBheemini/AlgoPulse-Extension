@@ -1,0 +1,100 @@
+[
+  {
+    "problem_title": "Valid Palindrome",
+    "problem_slug": "valid-palindrome",
+    "platform": "leetcode",
+    "difficulty": "Easy",
+    "language": "python3",
+    "user_code": "class Solution:\\n    def isPalindrome(self, s: str) -> bool:\\n        clean = [c.lower() for c in s if c.isalnum()]\\n        return clean == clean[::-1]",
+    "overall_score": 92,
+    "optimality_score": 33,
+    "time_score": 24,
+    "space_score": 17,
+    "cleanliness_score": 18,
+    "user_time_complexity": "O(N)",
+    "user_space_complexity": "O(N)",
+    "optimal_time_complexity": "O(N)",
+    "optimal_space_complexity": "O(1)",
+    "summary_feedback": "Clean two-pointer or list comprehension approach.",
+    "improvements": [
+      "Use two pointers directly to achieve O(1) auxiliary space instead of allocating a clean list."
+    ],
+    "optimal_code": "class Solution:\\n    def isPalindrome(self, s: str) -> bool:\\n        l, r = 0, len(s) - 1\\n        while l < r:\\n            while l < r and not s[l].isalnum(): l += 1\\n            while l < r and not s[r].isalnum(): r -= 1\\n            if s[l].lower() != s[r].lower(): return False\\n            l += 1; r -= 1\\n        return True",
+    "id": "sub_1791382494164_m98v3",
+    "created_at": "2026-10-07T14:14:54.164Z"
+  },
+  {
+    "id": "sub_seed_1",
+    "problem_title": "Two Sum",
+    "problem_slug": "two-sum",
+    "platform": "leetcode",
+    "difficulty": "Easy",
+    "language": "python3",
+    "user_code": "class Solution:\n    def twoSum(self, nums: List[int], target: int) -> List[int]:\n        lookup = {}\n        for i, num in enumerate(nums):\n            diff = target - num\n            if diff in lookup:\n                return [lookup[diff], i]\n            lookup[num] = i\n        return []",
+    "overall_score": 95,
+    "optimality_score": 35,
+    "time_score": 25,
+    "space_score": 18,
+    "cleanliness_score": 17,
+    "user_time_complexity": "O(N)",
+    "user_space_complexity": "O(N)",
+    "optimal_time_complexity": "O(N)",
+    "optimal_space_complexity": "O(N)",
+    "summary_feedback": "Optimal single-pass hash map approach. Excellent time complexity.",
+    "improvements": [
+      "Type annotations are clean and idiomatic.",
+      "Consider handling edge case where array has fewer than 2 elements."
+    ],
+    "optimal_code": "class Solution:\n    def twoSum(self, nums: List[int], target: int) -> List[int]:\n        seen = {}\n        for i, val in enumerate(nums):\n            needed = target - val\n            if needed in seen:\n                return [seen[needed], i]\n            seen[val] = i\n        return []",
+    "created_at": "2026-10-04T14:12:30.140Z"
+  },
+  {
+    "id": "sub_seed_2",
+    "problem_title": "Longest Substring Without Repeating Characters",
+    "problem_slug": "longest-substring-without-repeating-characters",
+    "platform": "leetcode",
+    "difficulty": "Medium",
+    "language": "python3",
+    "user_code": "class Solution:\n    def lengthOfLongestSubstring(self, s: str) -> int:\n        seen = set()\n        left = 0\n        ans = 0\n        for right in range(len(s)):\n            while s[right] in seen:\n                seen.remove(s[left])\n                left += 1\n            seen.add(s[right])\n            ans = max(ans, right - left + 1)\n        return ans",
+    "overall_score": 90,
+    "optimality_score": 34,
+    "time_score": 24,
+    "space_score": 16,
+    "cleanliness_score": 16,
+    "user_time_complexity": "O(N)",
+    "user_space_complexity": "O(min(M, N))",
+    "optimal_time_complexity": "O(N)",
+    "optimal_space_complexity": "O(min(M, N))",
+    "summary_feedback": "Sliding window technique implemented cleanly with set lookups.",
+    "improvements": [
+      "You can optimize further by storing character index maps instead of sliding the left pointer one by one."
+    ],
+    "optimal_code": "class Solution:\n    def lengthOfLongestSubstring(self, s: str) -> int:\n        char_idx = {}\n        left = 0\n        longest = 0\n        for right, ch in enumerate(s):\n            if ch in char_idx and char_idx[ch] >= left:\n                left = char_idx[ch] + 1\n            char_idx[ch] = right\n            longest = max(longest, right - left + 1)\n        return longest",
+    "created_at": "2026-10-06T14:12:30.141Z"
+  },
+  {
+    "id": "sub_seed_3",
+    "problem_title": "Coin Change",
+    "problem_slug": "coin-change",
+    "platform": "leetcode",
+    "difficulty": "Medium",
+    "language": "python3",
+    "user_code": "class Solution:\n    def coinChange(self, coins: List[int], amount: int) -> int:\n        dp = [float('inf')] * (amount + 1)\n        dp[0] = 0\n        for coin in coins:\n            for x in range(coin, amount + 1):\n                dp[x] = min(dp[x], dp[x - coin] + 1)\n        return dp[amount] if dp[amount] != float('inf') else -1",
+    "overall_score": 88,
+    "optimality_score": 32,
+    "time_score": 22,
+    "space_score": 18,
+    "cleanliness_score": 16,
+    "user_time_complexity": "O(Amount * len(coins))",
+    "user_space_complexity": "O(Amount)",
+    "optimal_time_complexity": "O(Amount * len(coins))",
+    "optimal_space_complexity": "O(Amount)",
+    "summary_feedback": "Standard bottom-up DP formulation. Space is cleanly compressed to 1D array.",
+    "improvements": [
+      "Sort coins in reverse to prune states if using memoized DFS.",
+      "Check if amount == 0 early."
+    ],
+    "optimal_code": "class Solution:\n    def coinChange(self, coins: List[int], amount: int) -> int:\n        if amount == 0:\n            return 0\n        dp = [float('inf')] * (amount + 1)\n        dp[0] = 0\n        for c in coins:\n            for i in range(c, amount + 1):\n                dp[i] = min(dp[i], dp[i - c] + 1)\n        return dp[amount] if dp[amount] != float('inf') else -1",
+    "created_at": "2026-10-07T08:12:30.141Z"
+  }
+]
