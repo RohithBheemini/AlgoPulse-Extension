@@ -8,12 +8,9 @@ import {
   CheckCircle,
   RefreshCw,
   Database,
-  ShieldCheck,
   ExternalLink,
-  LogIn,
   User,
-  Layers,
-  Sparkles
+  Layers
 } from 'lucide-react';
 import { useAuth } from '@/components/AuthProvider';
 import { createClient } from '@/lib/supabase/client';
@@ -98,10 +95,8 @@ create table if not exists public.submissions (
   user_space_complexity text,
   optimal_time_complexity text,
   optimal_space_complexity text,
-  why_suboptimal text,
-  why_ideal text,
   summary_feedback text,
-  improvements jsonb default '[]'::jsonb,
+  improvements text[],
   optimal_code text,
   created_at timestamp with time zone default timezone('utc'::text, now())
 );
@@ -109,32 +104,36 @@ create table if not exists public.submissions (
 alter table public.profiles enable row level security;
 alter table public.submissions enable row level security;
 
-create policy "Users can view own profile" on public.profiles for select using (auth.uid() = id);
-create policy "Users can update own profile" on public.profiles for update using (auth.uid() = id);
-create policy "Users can view own submissions" on public.submissions for select using (auth.uid() = user_id or user_id is null);
-create policy "Allow insert on submissions" on public.submissions for insert with check (true);
+create policy "Users can read own profile" on public.profiles
+  for select using (auth.uid() = id);
+
+create policy "Users can update own profile" on public.profiles
+  for update using (auth.uid() = id);
+
+create policy "Users can read own submissions" on public.submissions
+  for select using (auth.uid() = user_id);
 
 create or replace function public.handle_new_user()
-returns trigger
-language plpgsql
-security definer set search_path = public
-as $$
+returns trigger as $$
+declare
+  random_hex text;
 begin
+  random_hex := md5(random()::text || clock_timestamp()::text);
   insert into public.profiles (id, email, display_name, extension_token)
   values (
     new.id,
     new.email,
-    coalesce(new.raw_user_meta_data->>'full_name', split_part(new.email, '@', 1)),
-    'ap_sec_' || md5(random()::text || clock_timestamp()::text)
-  )
-  on conflict (id) do nothing;
+    split_part(new.email, '@', 1),
+    'ap_sec_' || substr(random_hex, 1, 16)
+  );
   return new;
 end;
-$$;
+$$ language plpgsql security definer set search_path = public;
 
-create trigger on_auth_user_created
+create or replace trigger on_auth_user_created
   after insert on auth.users
-  for each row execute procedure public.handle_new_user();`;
+  for each row execute procedure public.handle_new_user();
+`;
 
   const handleCopySql = () => {
     navigator.clipboard.writeText(sqlSchema);
@@ -143,24 +142,24 @@ create trigger on_auth_user_created
   };
 
   return (
-    <div className="max-w-4xl mx-auto space-y-8 animate-in fade-in duration-300">
+    <div className="space-y-6 animate-in fade-in duration-300">
       <div>
-        <h1 className="text-2xl font-extrabold text-white">Extension Integration & Auth Settings</h1>
-        <p className="text-xs text-slate-400 mt-1">
+        <h1 className="text-2xl font-extrabold text-[#f0f6fc]">Extension & Integration Settings</h1>
+        <p className="text-xs text-[#8b949e] mt-1">
           Connect your AlgoPulse Chrome extension to sync LeetCode reviews securely to your account.
         </p>
       </div>
 
       {/* User Account Status Banner */}
       {!user ? (
-        <div className="p-5 rounded-2xl bg-indigo-950/40 border border-indigo-800/80 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div className="p-5 rounded-xl bg-[#161b22] border border-[#30363d] flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div className="flex items-center gap-3">
-            <div className="p-2.5 rounded-xl bg-indigo-600/20 text-indigo-400 border border-indigo-500/30">
+            <div className="p-2.5 rounded-xl bg-[#FBBC05]/15 text-[#FBBC05] border border-[#FBBC05]/30">
               <User className="w-5 h-5" />
             </div>
             <div>
-              <h2 className="text-sm font-bold text-white">Guest Mode Active</h2>
-              <p className="text-xs text-slate-300 mt-0.5">
+              <h2 className="text-sm font-bold text-[#f0f6fc]">Guest Mode Active</h2>
+              <p className="text-xs text-[#8b949e] mt-0.5">
                 Sign in or register an account so your submissions stay permanently saved under your personal profile.
               </p>
             </div>
@@ -168,30 +167,30 @@ create trigger on_auth_user_created
           <div className="flex items-center gap-2">
             <Link
               href="/login"
-              className="px-3.5 py-1.5 bg-slate-800 hover:bg-slate-700 text-white font-medium text-xs rounded-xl border border-slate-700 transition"
+              className="px-3.5 py-1.5 bg-[#21262d] hover:bg-[#30363d] text-[#c9d1d9] font-medium text-xs rounded-lg border border-[#30363d] transition cursor-pointer"
             >
               Sign In
             </Link>
             <Link
               href="/signup"
-              className="px-3.5 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white font-medium text-xs rounded-xl shadow-md shadow-indigo-600/30 transition"
+              className="px-3.5 py-1.5 bg-[#4285F4] hover:bg-[#3367D6] text-white font-medium text-xs rounded-lg shadow-sm shadow-[#4285F4]/30 transition cursor-pointer"
             >
               Create Account
             </Link>
           </div>
         </div>
       ) : (
-        <div className="p-5 rounded-2xl bg-emerald-950/30 border border-emerald-800/60 flex items-center justify-between">
+        <div className="p-5 rounded-xl bg-[#161b22] border border-[#30363d] flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="p-2 rounded-xl bg-emerald-600/20 text-emerald-400 border border-emerald-500/30">
+            <div className="p-2 rounded-xl bg-[#34A853]/15 text-[#34A853] border border-[#34A853]/30">
               <CheckCircle className="w-5 h-5" />
             </div>
             <div>
-              <h2 className="text-sm font-bold text-white flex items-center gap-2">
+              <h2 className="text-sm font-bold text-[#f0f6fc] flex items-center gap-2">
                 <span>Authenticated as</span>
-                <span className="font-mono text-emerald-300 font-semibold">{user.email}</span>
+                <span className="font-mono text-[#34A853] font-semibold">{user.email}</span>
               </h2>
-              <p className="text-xs text-slate-300 mt-0.5">
+              <p className="text-xs text-[#8b949e] mt-0.5">
                 Your extension submissions are linked directly to your Supabase user ID with Row-Level Security.
               </p>
             </div>
@@ -200,15 +199,15 @@ create trigger on_auth_user_created
       )}
 
       {/* Extension Access Token Card */}
-      <div className="p-6 rounded-2xl bg-slate-900/80 border border-slate-800 space-y-4">
+      <div className="p-6 rounded-xl bg-[#161b22] border border-[#30363d] space-y-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <div className="p-2 rounded-lg bg-indigo-600/20 text-indigo-400">
+            <div className="p-2 rounded-lg bg-[#4285F4]/15 text-[#4285F4] border border-[#4285F4]/30">
               <Key className="w-5 h-5" />
             </div>
             <div>
-              <h2 className="text-sm font-bold text-white">Personal Extension Access Token</h2>
-              <p className="text-xs text-slate-400">
+              <h2 className="text-sm font-bold text-[#f0f6fc]">Personal Extension Access Token</h2>
+              <p className="text-xs text-[#8b949e]">
                 Paste this token into the AlgoPulse Chrome extension popup to authorize automatic synchronization.
               </p>
             </div>
@@ -216,18 +215,18 @@ create trigger on_auth_user_created
           <button
             onClick={handleGenerateNew}
             disabled={regenerating}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-slate-700 bg-slate-800 hover:bg-slate-700 text-xs text-slate-200 transition cursor-pointer"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-[#30363d] bg-[#21262d] hover:bg-[#30363d] text-xs text-[#c9d1d9] transition cursor-pointer"
           >
             <RefreshCw className={`w-3.5 h-3.5 ${regenerating ? 'animate-spin' : ''}`} />
             <span>Generate New</span>
           </button>
         </div>
 
-        <div className="flex items-center gap-2 p-3 rounded-xl bg-slate-950 border border-slate-800 font-mono text-xs">
-          <span className="flex-1 text-slate-200 truncate">{token}</span>
+        <div className="flex items-center gap-2 p-3 rounded-lg bg-[#0d1117] border border-[#30363d] font-mono text-xs">
+          <span className="flex-1 text-[#f0f6fc] truncate">{token}</span>
           <button
             onClick={handleCopyToken}
-            className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white font-sans text-xs font-medium transition cursor-pointer shrink-0"
+            className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-[#4285F4] hover:bg-[#3367D6] text-white font-sans text-xs font-medium transition cursor-pointer shrink-0 shadow-sm"
           >
             {copiedToken ? (
               <>
@@ -245,39 +244,39 @@ create trigger on_auth_user_created
       </div>
 
       {/* Step by Step Setup Instructions */}
-      <div className="p-6 rounded-2xl bg-slate-900/80 border border-slate-800 space-y-4">
-        <h2 className="text-sm font-bold text-white flex items-center gap-2">
-          <Layers className="w-4 h-4 text-indigo-400" />
+      <div className="p-6 rounded-xl bg-[#161b22] border border-[#30363d] space-y-4">
+        <h2 className="text-sm font-bold text-[#f0f6fc] flex items-center gap-2">
+          <Layers className="w-4 h-4 text-[#4285F4]" />
           Quick 3-Step Extension Setup
         </h2>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
-          <div className="p-4 rounded-xl bg-slate-950/60 border border-slate-800/80 space-y-2">
-            <div className="w-6 h-6 rounded-full bg-indigo-600 text-white font-bold flex items-center justify-center text-xs">
+          <div className="p-4 rounded-lg bg-[#0d1117] border border-[#30363d] space-y-2">
+            <div className="w-6 h-6 rounded-full bg-[#4285F4] text-white font-bold flex items-center justify-center text-xs">
               1
             </div>
-            <h3 className="font-semibold text-white">Load Extension in Chrome</h3>
-            <p className="text-slate-400 leading-relaxed text-[11px]">
-              Open <code className="text-indigo-300">chrome://extensions</code>, enable Developer Mode, and click <strong>"Load unpacked"</strong> targeting <code className="text-indigo-300">extension/dist</code>.
+            <h3 className="font-semibold text-[#f0f6fc]">Load Extension in Chrome</h3>
+            <p className="text-[#8b949e] leading-relaxed text-[11px]">
+              Open <code className="text-[#4285F4]">chrome://extensions</code>, enable Developer Mode, and click <strong>"Load unpacked"</strong> targeting <code className="text-[#4285F4]">extension/dist</code>.
             </p>
           </div>
 
-          <div className="p-4 rounded-xl bg-slate-950/60 border border-slate-800/80 space-y-2">
-            <div className="w-6 h-6 rounded-full bg-indigo-600 text-white font-bold flex items-center justify-center text-xs">
+          <div className="p-4 rounded-lg bg-[#0d1117] border border-[#30363d] space-y-2">
+            <div className="w-6 h-6 rounded-full bg-[#FBBC05] text-[#0d1117] font-bold flex items-center justify-center text-xs">
               2
             </div>
-            <h3 className="font-semibold text-white">Enter API Key & Token</h3>
-            <p className="text-slate-400 leading-relaxed text-[11px]">
+            <h3 className="font-semibold text-[#f0f6fc]">Enter API Key & Token</h3>
+            <p className="text-[#8b949e] leading-relaxed text-[11px]">
               Click the AlgoPulse toolbar icon. Enter your free Gemini API key and paste your token above.
             </p>
           </div>
 
-          <div className="p-4 rounded-xl bg-slate-950/60 border border-slate-800/80 space-y-2">
-            <div className="w-6 h-6 rounded-full bg-indigo-600 text-white font-bold flex items-center justify-center text-xs">
+          <div className="p-4 rounded-lg bg-[#0d1117] border border-[#30363d] space-y-2">
+            <div className="w-6 h-6 rounded-full bg-[#34A853] text-white font-bold flex items-center justify-center text-xs">
               3
             </div>
-            <h3 className="font-semibold text-white">Solve on LeetCode</h3>
-            <p className="text-slate-400 leading-relaxed text-[11px]">
+            <h3 className="font-semibold text-[#f0f6fc]">Solve on LeetCode</h3>
+            <p className="text-[#8b949e] leading-relaxed text-[11px]">
               Write your code on any LeetCode problem. Click <strong>"⚡ AlgoPulse Review"</strong> to get instant AI scoring and automatic sync!
             </p>
           </div>
@@ -285,15 +284,15 @@ create trigger on_auth_user_created
       </div>
 
       {/* Supabase PostgreSQL Cloud Configuration */}
-      <div className="p-6 rounded-2xl bg-slate-900/80 border border-slate-800 space-y-4">
+      <div className="p-6 rounded-xl bg-[#161b22] border border-[#30363d] space-y-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <div className="p-2 rounded-lg bg-emerald-600/20 text-emerald-400">
+            <div className="p-2 rounded-lg bg-[#34A853]/15 text-[#34A853] border border-[#34A853]/30">
               <Database className="w-5 h-5" />
             </div>
             <div>
-              <h2 className="text-sm font-bold text-white">Supabase SQL Schema & Authentication Trigger</h2>
-              <p className="text-xs text-slate-400">
+              <h2 className="text-sm font-bold text-[#f0f6fc]">Supabase SQL Schema & Authentication Trigger</h2>
+              <p className="text-xs text-[#8b949e]">
                 Run this script in your Supabase project (SQL Editor $\rightarrow$ New Query) to create the tables, RLS policies, and auto-token trigger.
               </p>
             </div>
@@ -302,7 +301,7 @@ create trigger on_auth_user_created
             href="https://supabase.com"
             target="_blank"
             rel="noreferrer"
-            className="flex items-center gap-1 text-xs text-emerald-400 hover:underline"
+            className="flex items-center gap-1 text-xs text-[#34A853] hover:underline"
           >
             <span>Supabase Free Tier</span>
             <ExternalLink className="w-3.5 h-3.5" />
@@ -310,12 +309,12 @@ create trigger on_auth_user_created
         </div>
 
         <div className="relative">
-          <pre className="p-4 rounded-xl bg-slate-950 font-mono text-[11px] text-slate-300 overflow-x-auto border border-slate-800 leading-relaxed max-h-72">
+          <pre className="p-4 rounded-lg bg-[#0d1117] font-mono text-[11px] text-[#c9d1d9] overflow-x-auto border border-[#30363d] leading-relaxed max-h-72">
             <code>{sqlSchema}</code>
           </pre>
           <button
             onClick={handleCopySql}
-            className="absolute top-3 right-3 p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs flex items-center gap-1 transition cursor-pointer"
+            className="absolute top-3 right-3 p-1.5 rounded-lg bg-[#21262d] hover:bg-[#30363d] text-[#c9d1d9] text-xs flex items-center gap-1 border border-[#30363d] transition cursor-pointer"
           >
             <Copy className="w-3 h-3" />
             <span>{copiedSql ? 'Copied SQL!' : 'Copy SQL'}</span>

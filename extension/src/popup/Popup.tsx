@@ -7,10 +7,8 @@ import {
   AlertCircle,
   ExternalLink,
   Save,
-  RotateCcw,
   Sparkles,
   History,
-  Lock,
   Eye,
   EyeOff
 } from 'lucide-react';
@@ -87,42 +85,45 @@ export const Popup: React.FC = () => {
   };
 
   return (
-    <div className="w-[380px] bg-slate-900 text-slate-100 min-h-[480px] font-sans flex flex-col">
+    <div className="w-[380px] bg-[#0d1117] text-[#c9d1d9] min-h-[480px] font-sans flex flex-col">
+      {/* Top 2px Google 4-Color Accent Line */}
+      <div className="h-[2px] w-full google-gradient-bar shrink-0" />
+
       {/* Top Header */}
-      <div className="p-4 border-b border-slate-800 bg-slate-950/70 flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <div className="p-1.5 rounded-lg bg-indigo-600 text-white shadow-md shadow-indigo-500/20">
-            <Sparkles className="w-4 h-4 text-amber-300" />
+      <div className="p-4 border-b border-[#30363d] bg-[#161b22] flex items-center justify-between">
+        <div className="flex items-center gap-2.5">
+          <div className="p-1.5 rounded-lg bg-[#4285F4] text-white shadow-md shadow-[#4285F4]/20">
+            <Sparkles className="w-4 h-4 text-[#FBBC05] fill-[#FBBC05]" />
           </div>
           <div>
-            <h1 className="text-sm font-bold tracking-tight text-white flex items-center gap-1.5">
+            <h1 className="text-sm font-bold tracking-tight text-[#f0f6fc] flex items-center gap-1.5">
               AlgoPulse
-              <span className="text-[10px] font-medium px-1.5 py-0.2 rounded bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">
+              <span className="text-[10px] font-semibold px-1.5 py-0.2 rounded bg-[#21262d] text-[#4285F4] border border-[#30363d]">
                 v1.0
               </span>
             </h1>
-            <p className="text-[11px] text-slate-400">AI Code Review & Tracker</p>
+            <p className="text-[11px] text-[#8b949e]">AI Code Review & Tracker</p>
           </div>
         </div>
 
         {/* Navigation Tabs */}
-        <div className="flex bg-slate-800/80 rounded-lg p-0.5 text-xs">
+        <div className="flex bg-[#0d1117] border border-[#30363d] rounded-lg p-0.5 text-xs">
           <button
             onClick={() => setActiveTab('settings')}
-            className={`px-2.5 py-1 rounded-md transition font-medium ${
+            className={`px-2.5 py-1 rounded-md transition font-medium cursor-pointer ${
               activeTab === 'settings'
-                ? 'bg-indigo-600 text-white shadow-sm'
-                : 'text-slate-400 hover:text-white'
+                ? 'bg-[#21262d] text-[#f0f6fc] border border-[#30363d] shadow-sm'
+                : 'text-[#8b949e] hover:text-[#f0f6fc]'
             }`}
           >
             Settings
           </button>
           <button
             onClick={() => setActiveTab('history')}
-            className={`px-2.5 py-1 rounded-md transition font-medium ${
+            className={`px-2.5 py-1 rounded-md transition font-medium cursor-pointer ${
               activeTab === 'history'
-                ? 'bg-indigo-600 text-white shadow-sm'
-                : 'text-slate-400 hover:text-white'
+                ? 'bg-[#21262d] text-[#f0f6fc] border border-[#30363d] shadow-sm'
+                : 'text-[#8b949e] hover:text-[#f0f6fc]'
             }`}
           >
             History ({history.length})
@@ -137,15 +138,15 @@ export const Popup: React.FC = () => {
             {/* Gemini API Key Section */}
             <div className="space-y-1.5">
               <div className="flex items-center justify-between">
-                <label className="text-xs font-semibold text-slate-200 flex items-center gap-1.5">
-                  <Key className="w-3.5 h-3.5 text-indigo-400" />
+                <label className="text-xs font-semibold text-[#f0f6fc] flex items-center gap-1.5">
+                  <Key className="w-3.5 h-3.5 text-[#4285F4]" />
                   Gemini API Key
                 </label>
                 <a
                   href="https://aistudio.google.com/app/apikey"
                   target="_blank"
                   rel="noreferrer"
-                  className="text-[10px] text-indigo-400 hover:underline flex items-center gap-0.5"
+                  className="text-[10px] text-[#4285F4] hover:underline flex items-center gap-0.5"
                 >
                   Get Free Key <ExternalLink className="w-2.5 h-2.5" />
                 </a>
@@ -156,33 +157,33 @@ export const Popup: React.FC = () => {
                   value={settings.geminiApiKey}
                   onChange={(e) => setSettings({ ...settings, geminiApiKey: e.target.value })}
                   placeholder="AIzaSy..."
-                  className="w-full px-3 py-2 pr-9 bg-slate-950 border border-slate-700 rounded-lg text-xs text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500 transition"
+                  className="w-full px-3 py-2 pr-9 bg-[#161b22] border border-[#30363d] rounded-lg text-xs text-[#f0f6fc] placeholder-[#8b949e] focus:outline-none focus:border-[#4285F4] transition"
                 />
                 <button
                   type="button"
                   onClick={() => setShowKey(!showKey)}
-                  className="absolute right-2.5 top-2.5 text-slate-400 hover:text-white"
+                  className="absolute right-2.5 top-2.5 text-[#8b949e] hover:text-[#f0f6fc]"
                 >
                   {showKey ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
                 </button>
               </div>
               <div className="flex items-center justify-between pt-0.5">
-                <span className="text-[10px] text-slate-400">Uses 100% free Gemini 2.5 Flash tier</span>
+                <span className="text-[10px] text-[#8b949e]">Uses free Google Gemini Flash tier</span>
                 <button
                   type="button"
                   onClick={handleTestKey}
                   disabled={!settings.geminiApiKey || keyTestStatus?.loading}
-                  className="text-[10px] text-indigo-400 hover:text-indigo-300 font-medium disabled:opacity-40"
+                  className="text-[10px] text-[#4285F4] hover:text-[#3367D6] font-medium disabled:opacity-40 cursor-pointer"
                 >
                   {keyTestStatus?.loading ? 'Testing...' : 'Test Key'}
                 </button>
               </div>
               {keyTestStatus && (
                 <div
-                  className={`p-2 rounded text-[11px] flex items-center gap-1.5 ${
+                  className={`p-2 rounded-lg text-[11px] flex items-center gap-1.5 ${
                     keyTestStatus.ok
-                      ? 'bg-emerald-950/50 text-emerald-300 border border-emerald-800'
-                      : 'bg-rose-950/50 text-rose-300 border border-rose-800'
+                      ? 'bg-[#34A853]/15 text-[#34A853] border border-[#34A853]/30'
+                      : 'bg-[#EA4335]/15 text-[#EA4335] border border-[#EA4335]/30'
                   }`}
                 >
                   {keyTestStatus.ok ? (
@@ -197,8 +198,8 @@ export const Popup: React.FC = () => {
 
             {/* Hosted Dashboard URL */}
             <div className="space-y-1.5">
-              <label className="text-xs font-semibold text-slate-200 flex items-center gap-1.5">
-                <Globe className="w-3.5 h-3.5 text-indigo-400" />
+              <label className="text-xs font-semibold text-[#f0f6fc] flex items-center gap-1.5">
+                <Globe className="w-3.5 h-3.5 text-[#4285F4]" />
                 Hosted Dashboard URL
               </label>
               <input
@@ -206,25 +207,25 @@ export const Popup: React.FC = () => {
                 value={settings.dashboardUrl}
                 onChange={(e) => setSettings({ ...settings, dashboardUrl: e.target.value })}
                 placeholder="http://localhost:3000"
-                className="w-full px-3 py-2 bg-slate-950 border border-slate-700 rounded-lg text-xs text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500 transition"
+                className="w-full px-3 py-2 bg-[#161b22] border border-[#30363d] rounded-lg text-xs text-[#f0f6fc] placeholder-[#8b949e] focus:outline-none focus:border-[#4285F4] transition"
               />
-              <span className="text-[10px] text-slate-400 block">
-                Local dev or deployed URL (e.g. https://your-algopulse.vercel.app)
+              <span className="text-[10px] text-[#8b949e] block">
+                Local dev or deployed URL (e.g. http://localhost:3000)
               </span>
             </div>
 
             {/* Extension Access Token */}
             <div className="space-y-1.5">
               <div className="flex items-center justify-between">
-                <label className="text-xs font-semibold text-slate-200 flex items-center gap-1.5">
-                  <ShieldCheck className="w-3.5 h-3.5 text-indigo-400" />
+                <label className="text-xs font-semibold text-[#f0f6fc] flex items-center gap-1.5">
+                  <ShieldCheck className="w-3.5 h-3.5 text-[#4285F4]" />
                   Extension Access Token
                 </label>
                 <a
                   href={`${settings.dashboardUrl}/settings`}
                   target="_blank"
                   rel="noreferrer"
-                  className="text-[10px] text-indigo-400 hover:underline flex items-center gap-0.5"
+                  className="text-[10px] text-[#4285F4] hover:underline flex items-center gap-0.5"
                 >
                   Get Token <ExternalLink className="w-2.5 h-2.5" />
                 </a>
@@ -234,25 +235,25 @@ export const Popup: React.FC = () => {
                 value={settings.extensionToken}
                 onChange={(e) => setSettings({ ...settings, extensionToken: e.target.value })}
                 placeholder="ap_sec_..."
-                className="w-full px-3 py-2 bg-slate-950 border border-slate-700 rounded-lg text-xs text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500 transition"
+                className="w-full px-3 py-2 bg-[#161b22] border border-[#30363d] rounded-lg text-xs text-[#f0f6fc] placeholder-[#8b949e] focus:outline-none focus:border-[#4285F4] transition"
               />
               <div className="flex items-center justify-between pt-0.5">
-                <span className="text-[10px] text-slate-400">Generated from dashboard settings</span>
+                <span className="text-[10px] text-[#8b949e]">Generated from dashboard settings</span>
                 <button
                   type="button"
                   onClick={handleTestDashboard}
                   disabled={!settings.dashboardUrl || dashTestStatus?.loading}
-                  className="text-[10px] text-indigo-400 hover:text-indigo-300 font-medium disabled:opacity-40"
+                  className="text-[10px] text-[#4285F4] hover:text-[#3367D6] font-medium disabled:opacity-40 cursor-pointer"
                 >
                   {dashTestStatus?.loading ? 'Pinging...' : 'Test Connection'}
                 </button>
               </div>
               {dashTestStatus && (
                 <div
-                  className={`p-2 rounded text-[11px] flex items-center gap-1.5 ${
+                  className={`p-2 rounded-lg text-[11px] flex items-center gap-1.5 ${
                     dashTestStatus.ok
-                      ? 'bg-emerald-950/50 text-emerald-300 border border-emerald-800'
-                      : 'bg-rose-950/50 text-rose-300 border border-rose-800'
+                      ? 'bg-[#34A853]/15 text-[#34A853] border border-[#34A853]/30'
+                      : 'bg-[#EA4335]/15 text-[#EA4335] border border-[#EA4335]/30'
                   }`}
                 >
                   {dashTestStatus.ok ? (
@@ -266,16 +267,16 @@ export const Popup: React.FC = () => {
             </div>
 
             {/* Auto-Sync Toggle */}
-            <div className="p-3 rounded-lg bg-slate-950/60 border border-slate-800 flex items-center justify-between">
+            <div className="p-3 rounded-lg bg-[#161b22] border border-[#30363d] flex items-center justify-between">
               <div>
-                <p className="text-xs font-semibold text-slate-200">Auto-Sync Submissions</p>
-                <p className="text-[10px] text-slate-400">Automatically push evaluated code to dashboard</p>
+                <p className="text-xs font-semibold text-[#f0f6fc]">Auto-Sync Submissions</p>
+                <p className="text-[10px] text-[#8b949e]">Automatically push evaluated code to dashboard</p>
               </div>
               <input
                 type="checkbox"
                 checked={settings.autoSync}
                 onChange={(e) => setSettings({ ...settings, autoSync: e.target.checked })}
-                className="w-4 h-4 accent-indigo-600 rounded cursor-pointer"
+                className="w-4 h-4 accent-[#4285F4] rounded cursor-pointer"
               />
             </div>
 
@@ -284,13 +285,13 @@ export const Popup: React.FC = () => {
               <button
                 type="button"
                 onClick={handleSave}
-                className="w-full py-2 bg-indigo-600 hover:bg-indigo-500 text-white font-medium text-xs rounded-lg transition shadow-md shadow-indigo-600/20 flex items-center justify-center gap-1.5 cursor-pointer"
+                className="w-full py-2 bg-[#4285F4] hover:bg-[#3367D6] text-white font-medium text-xs rounded-lg transition shadow-sm shadow-[#4285F4]/30 flex items-center justify-center gap-1.5 cursor-pointer"
               >
                 <Save className="w-3.5 h-3.5" />
                 <span>Save Configuration</span>
               </button>
               {saveStatus && (
-                <p className="text-[11px] text-emerald-400 text-center mt-2 font-medium">
+                <p className="text-[11px] text-[#34A853] text-center mt-2 font-medium">
                   {saveStatus}
                 </p>
               )}
@@ -301,34 +302,34 @@ export const Popup: React.FC = () => {
         {activeTab === 'history' && (
           <div className="space-y-2.5">
             {history.length === 0 ? (
-              <div className="py-12 text-center text-slate-500 text-xs space-y-2">
-                <History className="w-8 h-8 mx-auto text-slate-600" />
-                <p>No evaluations recorded yet.</p>
-                <p className="text-[10px]">Open LeetCode, write code, and click "Analyze Code" to see entries here.</p>
+              <div className="py-12 text-center text-[#8b949e] text-xs space-y-2">
+                <History className="w-8 h-8 mx-auto text-[#6e7681]" />
+                <p className="text-[#f0f6fc] font-medium">No evaluations recorded yet.</p>
+                <p className="text-[10px] text-[#8b949e]">Open LeetCode, write code, and click "Analyze Code" to see entries here.</p>
               </div>
             ) : (
               history.map((item) => (
                 <div
                   key={item.id}
-                  className="p-2.5 rounded-lg bg-slate-950 border border-slate-800 text-xs space-y-1 hover:border-slate-700 transition"
+                  className="p-2.5 rounded-lg bg-[#161b22] border border-[#30363d] text-xs space-y-1 hover:border-[#8b949e]/50 transition"
                 >
                   <div className="flex items-center justify-between">
-                    <span className="font-semibold text-slate-200 truncate max-w-[200px]">
+                    <span className="font-semibold text-[#f0f6fc] truncate max-w-[200px]">
                       {item.problem_title}
                     </span>
                     <span
                       className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${
                         item.overall_score >= 80
-                          ? 'bg-emerald-950 text-emerald-300 border border-emerald-800'
+                          ? 'bg-[#34A853]/15 text-[#34A853] border border-[#34A853]/30'
                           : item.overall_score >= 60
-                          ? 'bg-amber-950 text-amber-300 border border-amber-800'
-                          : 'bg-rose-950 text-rose-300 border border-rose-800'
+                          ? 'bg-[#FBBC05]/15 text-[#FBBC05] border border-[#FBBC05]/30'
+                          : 'bg-[#EA4335]/15 text-[#EA4335] border border-[#EA4335]/30'
                       }`}
                     >
                       {item.overall_score}/100
                     </span>
                   </div>
-                  <div className="flex items-center justify-between text-[10px] text-slate-400">
+                  <div className="flex items-center justify-between text-[10px] text-[#8b949e]">
                     <span className="font-mono">Time: {item.user_time_complexity}</span>
                     <span>{new Date(item.created_at).toLocaleDateString()}</span>
                   </div>
@@ -342,7 +343,7 @@ export const Popup: React.FC = () => {
                   href={settings.dashboardUrl}
                   target="_blank"
                   rel="noreferrer"
-                  className="w-full py-2 bg-slate-800 hover:bg-slate-700 text-white font-medium text-xs rounded-lg transition flex items-center justify-center gap-1.5 text-center"
+                  className="w-full py-2 bg-[#21262d] hover:bg-[#30363d] text-[#f0f6fc] font-medium text-xs rounded-lg border border-[#30363d] transition flex items-center justify-center gap-1.5 text-center cursor-pointer"
                 >
                   <span>View All in Web Dashboard</span>
                   <ExternalLink className="w-3.5 h-3.5" />
@@ -354,8 +355,14 @@ export const Popup: React.FC = () => {
       </div>
 
       {/* Footer */}
-      <div className="p-2.5 border-t border-slate-800 text-center text-[10px] text-slate-500 bg-slate-950/40">
-        Ready for LeetCode evaluation
+      <div className="p-2.5 border-t border-[#30363d] text-center text-[10px] text-[#8b949e] bg-[#161b22]">
+        <div className="flex items-center justify-center gap-1.5">
+          <span className="w-1.5 h-1.5 rounded-full bg-[#4285F4]" />
+          <span className="w-1.5 h-1.5 rounded-full bg-[#EA4335]" />
+          <span className="w-1.5 h-1.5 rounded-full bg-[#FBBC05]" />
+          <span className="w-1.5 h-1.5 rounded-full bg-[#34A853]" />
+          <span>Ready for LeetCode evaluation</span>
+        </div>
       </div>
     </div>
   );
