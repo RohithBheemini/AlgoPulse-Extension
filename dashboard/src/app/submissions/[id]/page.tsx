@@ -94,7 +94,7 @@ export default async function SubmissionDetailPage({
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         <div className="p-4 rounded-xl bg-[#161b22] border border-[#30363d]">
           <span className="text-[11px] text-[#8b949e] font-semibold uppercase">
-            Optimality
+            Algorithmic Approach
           </span>
           <div className="mt-1 text-xl font-bold text-[#f0f6fc]">
             {submission.optimality_score} <span className="text-xs text-[#6e7681] font-normal">/ 35</span>
@@ -102,7 +102,7 @@ export default async function SubmissionDetailPage({
         </div>
         <div className="p-4 rounded-xl bg-[#161b22] border border-[#30363d]">
           <span className="text-[11px] text-[#8b949e] font-semibold uppercase">
-            Time Complexity
+            Approach Optimality
           </span>
           <div className="mt-1 text-xl font-bold text-[#f0f6fc]">
             {submission.time_score} <span className="text-xs text-[#6e7681] font-normal">/ 25</span>
@@ -133,11 +133,11 @@ export default async function SubmissionDetailPage({
           <div className="p-4 border-b border-[#30363d] bg-[#161b22] flex items-center justify-between">
             <div>
               <h2 className="text-xs font-bold text-[#f0f6fc] uppercase tracking-wider">
-                Your Submitted Solution
+                Your Solution Approach
               </h2>
               <div className="flex items-center gap-2 mt-1">
                 <span className="text-[11px] font-mono text-[#8b949e]">
-                  Time: <span className="text-[#c9d1d9]">{submission.user_time_complexity}</span>
+                  Approach: <span className="text-[#c9d1d9] font-medium">{submission.user_time_complexity}</span>
                 </span>
                 <span className="text-[#6e7681]">•</span>
                 <span className="text-[11px] font-mono text-[#8b949e]">
@@ -162,11 +162,11 @@ export default async function SubmissionDetailPage({
             <div>
               <h2 className="text-xs font-bold text-[#4285F4] uppercase tracking-wider flex items-center gap-1.5">
                 <Sparkles className="w-3.5 h-3.5 text-[#FBBC05] fill-[#FBBC05]" />
-                Optimal Solution Benchmark
+                Optimal Benchmark Approach
               </h2>
               <div className="flex items-center gap-2 mt-1">
                 <span className="text-[11px] font-mono text-[#8b949e]">
-                  Time: <span className="text-[#4285F4] font-medium">{submission.optimal_time_complexity}</span>
+                  Approach: <span className="text-[#4285F4] font-medium">{submission.optimal_time_complexity}</span>
                 </span>
                 <span className="text-[#6e7681]">•</span>
                 <span className="text-[11px] font-mono text-[#8b949e]">
@@ -191,9 +191,19 @@ export default async function SubmissionDetailPage({
         <div>
           <h2 className="text-sm font-bold text-[#f0f6fc] flex items-center gap-1.5">
             <Sparkles className="w-4 h-4 text-[#4285F4]" />
-            AI Algorithmic Critique & Recommendations
+            AI Algorithmic Critique & Approach Recommendations
           </h2>
-          <p className="text-xs text-[#c9d1d9] mt-2 leading-relaxed">
+          {submission.why_suboptimal && (
+            <div className="mt-3 p-3 rounded-lg bg-[#0d1117] border border-[#30363d] text-xs space-y-1">
+              <span className="text-[10px] font-semibold text-[#FBBC05] uppercase tracking-wider block">
+                Approach Critique & Paradigm Shift
+              </span>
+              <p className="text-[#c9d1d9] leading-relaxed">
+                {submission.why_suboptimal}
+              </p>
+            </div>
+          )}
+          <p className="text-xs text-[#c9d1d9] mt-3 leading-relaxed">
             {submission.summary_feedback}
           </p>
         </div>

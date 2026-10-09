@@ -136,6 +136,14 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
         // Run Gemini Analysis
         const analysis: AIAnalysisResult = await analyzeCodeWithGemini(metadata, settings.geminiApiKey);
 
+        const userApproachDisplay = analysis.user_approach?.name 
+          ? `${analysis.user_approach.name} (${analysis.user_approach.time_complexity})`
+          : (analysis.user_approach?.time_complexity || 'Standard Approach');
+
+        const optimalApproachDisplay = analysis.best_approach?.name
+          ? `${analysis.best_approach.name} (${analysis.best_approach.time_complexity})`
+          : (analysis.best_approach?.time_complexity || 'Optimal Approach');
+
         // Prepare sync payload
         const syncPayload: SyncSubmissionPayload = {
           problem_title: metadata.title,
@@ -149,10 +157,12 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
           time_score: analysis.scoring_breakdown.time_complexity,
           space_score: analysis.scoring_breakdown.space_complexity,
           cleanliness_score: analysis.scoring_breakdown.cleanliness,
-          user_time_complexity: analysis.user_approach.time_complexity,
+          user_time_complexity: userApproachDisplay,
           user_space_complexity: analysis.user_approach.space_complexity,
-          optimal_time_complexity: analysis.best_approach.time_complexity,
+          optimal_time_complexity: optimalApproachDisplay,
           optimal_space_complexity: analysis.best_approach.space_complexity,
+          why_suboptimal: analysis.why_suboptimal || analysis.user_approach.summary,
+          why_ideal: analysis.why_ideal || analysis.best_approach.explanation,
           summary_feedback: analysis.best_approach.explanation,
           improvements: analysis.improvements,
           optimal_code: analysis.optimal_code
@@ -175,8 +185,10 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
 
         return {
           success: true,
+          result: analysis,
           analysis,
-          syncStatus
+          syncStatus,
+          syncResult: syncStatus
         };
       }
 

@@ -54,18 +54,31 @@ export async function analyzeCodeWithGemini(
   }
 
   const systemInstruction = `You are an elite competitive programmer, algorithm professor, and technical interview reviewer.
-Your job is to objectively analyze a student's code for a coding problem, compare it against the absolute most optimal algorithmic solution, score it using a strict rubric, and output structured JSON.
+Your primary role is to evaluate a student's code based on their ALGORITHMIC APPROACH and problem-solving strategy, comparing it directly against the theoretical optimal approach.
+
+CORE EVALUATION PRINCIPLE — EVALUATE BY APPROACH, NOT JUST RAW TIME COMPLEXITY:
+Instead of only checking raw Big-O numbers, evaluate the algorithmic strategy:
+- Identify the exact approach/paradigm used (e.g., "Brute Force Nested Iteration", "Two-Pointer Inward Scan", "Hash Map Single-Pass Lookup", "Sliding Window", "Dynamic Programming Tabulation", "Greedy with Priority Queue", "Binary Search on Answer").
+- Analyze whether the student recognized the problem's underlying mathematical/data structure properties.
+- Explain why the user's approach is or isn't optimal, and what paradigm shift is needed.
 
 SCORING RUBRIC (Total 0 to 100):
-1. Algorithmic Optimality (0 to 35 pts): Did the user pick the optimal algorithm/data structure? (e.g., O(N) Hashmap vs O(N^2) brute force).
-2. Time Complexity (0 to 25 pts): How close is the Big-O time complexity to the theoretical minimum?
-3. Space Complexity (0 to 20 pts): Did the user minimize auxiliary memory and unnecessary allocations?
-4. Code Cleanliness & Edge Cases (0 to 20 pts): Proper idiomatic syntax, clean variable names, guard clauses, handling edge cases.
+1. Algorithmic Approach & Paradigm (0 to 35 pts):
+   - Did the user choose the right algorithmic paradigm for this problem structure?
+   - Did they recognize key properties (e.g., sorted array -> two pointers/binary search; frequency lookup -> hash map; overlapping subproblems -> DP)?
+   - Deduct points for brute force or mismatching paradigms.
+2. Approach Optimality & Strategy Efficiency (0 to 25 pts):
+   - How close is the execution of their approach to the theoretical optimal strategy?
+   - Does it avoid redundant computations, repeated traversals, or unnecessary state branching?
+3. Space Complexity & Memory Strategy (0 to 20 pts):
+   - Auxiliary memory economy: in-place mutations vs auxiliary allocations, avoiding unnecessary buffer structures.
+4. Code Quality, Cleanliness & Edge Cases (0 to 20 pts):
+   - Proper guard clauses, handling edge cases (empty inputs, single elements, duplicates, negative numbers, overflow), and clean idiomatic code.
 
 Provide:
 - Progressive Hints: 3 tiers:
-  Tier 1: Subtle observation/nudge.
-  Tier 2: Relevant data structure or pattern hint (e.g. "Try using a Hash Map").
+  Tier 1: Subtle observation/nudge focusing on problem structure.
+  Tier 2: Algorithmic approach / pattern hint (e.g. "Consider using a Hash Map single-pass approach...").
   Tier 3: Concrete strategy step without writing the whole code.
 - Optimal Code: The cleanest, idiomatic, optimal solution in the user's programming language (${metadata.language}).
 
@@ -73,22 +86,30 @@ You MUST return ONLY valid JSON strictly adhering to this schema:
 {
   "score": number,
   "scoring_breakdown": {
+    "approach_soundness": number,
+    "approach_optimality": number,
     "optimality": number,
     "time_complexity": number,
     "space_complexity": number,
     "cleanliness": number
   },
   "user_approach": {
+    "name": string,
+    "paradigm": string,
     "summary": string,
     "time_complexity": string,
     "space_complexity": string
   },
   "best_approach": {
+    "name": string,
+    "paradigm": string,
     "summary": string,
     "time_complexity": string,
     "space_complexity": string,
     "explanation": string
   },
+  "why_suboptimal": string,
+  "why_ideal": string,
   "hints": [string, string, string],
   "improvements": [string, string],
   "optimal_code": string
@@ -107,7 +128,7 @@ Student's Submitted Code:
 ${metadata.code || '// Empty code'}
 \`\`\`
 
-Analyze the student's code now and output the JSON.`;
+Evaluate the student's solution focusing on their algorithmic approach and output the JSON.`;
 
   const requestBody = {
     contents: [
@@ -166,11 +187,50 @@ Analyze the student's code now and output the JSON.`;
     throw new Error('Received an empty response from Gemini API.');
   }
 
+  let parsed: any;
   try {
-    const parsed: AIAnalysisResult = JSON.parse(rawText);
-    return parsed;
+    parsed = JSON.parse(rawText);
   } catch (err) {
     const cleaned = rawText.replace(/```json/g, '').replace(/```/g, '').trim();
-    return JSON.parse(cleaned) as AIAnalysisResult;
+    parsed = JSON.parse(cleaned);
   }
+
+  // Ensure approach-first normalization & aliases
+  if (!parsed.scoring_breakdown) {
+    parsed.scoring_breakdown = {};
+  }
+  const sb = parsed.scoring_breakdown;
+  sb.approach_soundness = sb.approach_soundness ?? sb.optimality ?? 30;
+  sb.optimality = sb.approach_soundness;
+  sb.approach_optimality = sb.approach_optimality ?? sb.time_complexity ?? 20;
+  sb.time_complexity = sb.approach_optimality;
+  sb.space_complexity = sb.space_complexity ?? 18;
+  sb.cleanliness = sb.cleanliness ?? 18;
+
+  if (!parsed.user_approach) {
+    parsed.user_approach = {
+      name: 'Standard Approach',
+      paradigm: 'General',
+      summary: 'Student submitted approach',
+      time_complexity: 'O(N)',
+      space_complexity: 'O(1)'
+    };
+  } else if (!parsed.user_approach.name) {
+    parsed.user_approach.name = parsed.user_approach.paradigm || 'Submitted Approach';
+  }
+
+  if (!parsed.best_approach) {
+    parsed.best_approach = {
+      name: 'Optimal Paradigm',
+      paradigm: 'Optimal',
+      summary: 'Ideal approach for this problem',
+      time_complexity: 'O(N)',
+      space_complexity: 'O(1)',
+      explanation: 'Optimal time and space complexity strategy.'
+    };
+  } else if (!parsed.best_approach.name) {
+    parsed.best_approach.name = parsed.best_approach.paradigm || 'Optimal Approach';
+  }
+
+  return parsed as AIAnalysisResult;
 }

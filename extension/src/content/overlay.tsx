@@ -59,17 +59,17 @@ export const AlgoPulseOverlay: React.FC = () => {
       });
 
       if (!response?.success) {
-        throw new Error(response?.error || 'Failed to complete code review analysis.');
+        throw new Error(response?.error || response?.message || 'Failed to complete code review analysis.');
       }
 
-      setResult(response.result);
+      setResult(response.result || response.analysis);
 
-      if (response.syncResult?.success) {
+      if (response.syncResult?.success || response.syncStatus?.synced) {
         setSyncStatus({ synced: true, message: 'Successfully synced to dashboard!' });
       } else if (response.syncResult?.skipped) {
         setSyncStatus({ synced: false, message: 'Sync disabled or dashboard token missing.' });
-      } else if (response.syncResult?.error) {
-        setSyncStatus({ synced: false, message: `Sync warning: ${response.syncResult.error}` });
+      } else if (response.syncResult?.error || response.syncStatus?.message) {
+        setSyncStatus({ synced: false, message: response.syncStatus?.message || `Sync warning: ${response.syncResult?.error}` });
       }
     } catch (err: any) {
       console.error('[AlgoPulse] Overlay Analysis Error:', err);
@@ -240,41 +240,48 @@ export const AlgoPulseOverlay: React.FC = () => {
                   </div>
                 </div>
 
-                {/* Rubric Breakdown */}
+                {/* Rubric Breakdown - Approach Focused */}
                 <div className="p-3.5 rounded-xl bg-[#161b22] border border-[#30363d] space-y-2.5 text-xs">
-                  <h4 className="font-semibold text-[#f0f6fc]">
-                    Rubric Breakdown
-                  </h4>
+                  <div className="flex items-center justify-between">
+                    <h4 className="font-semibold text-[#f0f6fc]">
+                      Approach Scoring Rubric
+                    </h4>
+                    <span className="text-[10px] text-[#8b949e]">Total 100 pts</span>
+                  </div>
                   <div className="space-y-2">
                     <div>
                       <div className="flex justify-between text-[11px] mb-1">
-                        <span className="text-[#8b949e]">Algorithmic Optimality</span>
-                        <span className="font-semibold text-[#c9d1d9]">{result.scoring_breakdown.optimality} / 35</span>
+                        <span className="text-[#8b949e]">Algorithmic Approach & Paradigm</span>
+                        <span className="font-semibold text-[#c9d1d9]">
+                          {(result.scoring_breakdown.approach_soundness ?? result.scoring_breakdown.optimality)} / 35
+                        </span>
                       </div>
                       <div className="w-full bg-[#21262d] h-1.5 rounded-full overflow-hidden">
                         <div
                           className="bg-[#4285F4] h-full rounded-full transition-all duration-500"
-                          style={{ width: `${(result.scoring_breakdown.optimality / 35) * 100}%` }}
+                          style={{ width: `${((result.scoring_breakdown.approach_soundness ?? result.scoring_breakdown.optimality) / 35) * 100}%` }}
                         />
                       </div>
                     </div>
 
                     <div>
                       <div className="flex justify-between text-[11px] mb-1">
-                        <span className="text-[#8b949e]">Time Complexity</span>
-                        <span className="font-semibold text-[#c9d1d9]">{result.scoring_breakdown.time_complexity} / 25</span>
+                        <span className="text-[#8b949e]">Approach Optimality & Strategy</span>
+                        <span className="font-semibold text-[#c9d1d9]">
+                          {(result.scoring_breakdown.approach_optimality ?? result.scoring_breakdown.time_complexity)} / 25
+                        </span>
                       </div>
                       <div className="w-full bg-[#21262d] h-1.5 rounded-full overflow-hidden">
                         <div
                           className="bg-[#34A853] h-full rounded-full transition-all duration-500"
-                          style={{ width: `${(result.scoring_breakdown.time_complexity / 25) * 100}%` }}
+                          style={{ width: `${((result.scoring_breakdown.approach_optimality ?? result.scoring_breakdown.time_complexity) / 25) * 100}%` }}
                         />
                       </div>
                     </div>
 
                     <div>
                       <div className="flex justify-between text-[11px] mb-1">
-                        <span className="text-[#8b949e]">Space Complexity</span>
+                        <span className="text-[#8b949e]">Space Complexity & Memory</span>
                         <span className="font-semibold text-[#c9d1d9]">{result.scoring_breakdown.space_complexity} / 20</span>
                       </div>
                       <div className="w-full bg-[#21262d] h-1.5 rounded-full overflow-hidden">
@@ -287,7 +294,7 @@ export const AlgoPulseOverlay: React.FC = () => {
 
                     <div>
                       <div className="flex justify-between text-[11px] mb-1">
-                        <span className="text-[#8b949e]">Cleanliness & Style</span>
+                        <span className="text-[#8b949e]">Cleanliness & Edge Cases</span>
                         <span className="font-semibold text-[#c9d1d9]">{result.scoring_breakdown.cleanliness} / 20</span>
                       </div>
                       <div className="w-full bg-[#21262d] h-1.5 rounded-full overflow-hidden">
@@ -300,30 +307,79 @@ export const AlgoPulseOverlay: React.FC = () => {
                   </div>
                 </div>
 
-                {/* Complexity Benchmark Comparison Card */}
-                <div className="p-3.5 rounded-xl border border-[#30363d] bg-[#161b22] space-y-2 text-xs">
-                  <h4 className="font-semibold text-[#f0f6fc]">
-                    Complexity Comparison
-                  </h4>
-                  <div className="grid grid-cols-2 gap-2">
-                    <div className="p-2.5 rounded-lg bg-[#0d1117] border border-[#30363d]">
-                      <span className="text-[10px] text-[#8b949e] uppercase font-semibold">Your Approach</span>
-                      <p className="mt-1 font-mono font-bold text-[#f0f6fc] text-sm">
-                        {result.user_approach.time_complexity}
+                {/* Algorithmic Approach Comparison Card */}
+                <div className="p-3.5 rounded-xl border border-[#30363d] bg-[#161b22] space-y-2.5 text-xs">
+                  <div className="flex items-center justify-between">
+                    <h4 className="font-semibold text-[#f0f6fc] flex items-center gap-1.5">
+                      <Code2 className="w-3.5 h-3.5 text-[#4285F4]" />
+                      Approach Evaluation
+                    </h4>
+                    <span className="text-[10px] text-[#8b949e]">
+                      Strategy Comparison
+                    </span>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                    {/* User Approach */}
+                    <div className="p-2.5 rounded-lg bg-[#0d1117] border border-[#30363d] space-y-1">
+                      <div className="flex items-center justify-between">
+                        <span className="text-[10px] text-[#8b949e] uppercase font-semibold">Your Approach</span>
+                        {result.user_approach.paradigm && (
+                          <span className="text-[9px] px-1.5 py-0.2 rounded bg-[#21262d] text-[#c9d1d9] border border-[#30363d]">
+                            {result.user_approach.paradigm}
+                          </span>
+                        )}
+                      </div>
+                      <p className="font-bold text-[#f0f6fc] text-xs leading-snug">
+                        {result.user_approach.name || 'Your Strategy'}
                       </p>
-                      <p className="text-[11px] text-[#8b949e]">Space: {result.user_approach.space_complexity}</p>
+                      <div className="flex items-center gap-2 text-[10px] text-[#8b949e] font-mono">
+                        <span>Time: <span className="text-[#c9d1d9]">{result.user_approach.time_complexity}</span></span>
+                        <span>•</span>
+                        <span>Space: <span className="text-[#c9d1d9]">{result.user_approach.space_complexity}</span></span>
+                      </div>
+                      {result.user_approach.summary && (
+                        <p className="text-[11px] text-[#8b949e] leading-relaxed pt-1 border-t border-[#30363d]/50">
+                          {result.user_approach.summary}
+                        </p>
+                      )}
                     </div>
-                    <div className="p-2.5 rounded-lg bg-[#0d1117] border border-[#4285F4]/40">
-                      <span className="text-[10px] text-[#4285F4] uppercase font-semibold">Optimal Approach</span>
-                      <p className="mt-1 font-mono font-bold text-[#4285F4] text-sm">
-                        {result.best_approach.time_complexity}
+
+                    {/* Optimal Approach */}
+                    <div className="p-2.5 rounded-lg bg-[#0d1117] border border-[#4285F4]/40 space-y-1">
+                      <div className="flex items-center justify-between">
+                        <span className="text-[10px] text-[#4285F4] uppercase font-semibold">Optimal Approach</span>
+                        {result.best_approach.paradigm && (
+                          <span className="text-[9px] px-1.5 py-0.2 rounded bg-[#34A853]/15 text-[#34A853] border border-[#34A853]/30">
+                            {result.best_approach.paradigm}
+                          </span>
+                        )}
+                      </div>
+                      <p className="font-bold text-[#4285F4] text-xs leading-snug">
+                        {result.best_approach.name || 'Ideal Paradigm'}
                       </p>
-                      <p className="text-[11px] text-[#8b949e]">Space: {result.best_approach.space_complexity}</p>
+                      <div className="flex items-center gap-2 text-[10px] text-[#8b949e] font-mono">
+                        <span>Time: <span className="text-[#4285F4]">{result.best_approach.time_complexity}</span></span>
+                        <span>•</span>
+                        <span>Space: <span className="text-[#4285F4]">{result.best_approach.space_complexity}</span></span>
+                      </div>
+                      <p className="text-[11px] text-[#c9d1d9] leading-relaxed pt-1 border-t border-[#30363d]/50">
+                        {result.best_approach.explanation}
+                      </p>
                     </div>
                   </div>
-                  <p className="text-[11px] text-[#c9d1d9] mt-1 italic leading-relaxed">
-                    {result.best_approach.explanation}
-                  </p>
+
+                  {/* Why Suboptimal / Why Ideal Critique */}
+                  {result.why_suboptimal && (
+                    <div className="p-2.5 rounded-lg bg-[#0d1117] border border-[#30363d] text-[11px] space-y-1">
+                      <span className="text-[10px] font-semibold text-[#FBBC05] uppercase tracking-wider block">
+                        Approach Critique & Paradigm Shift
+                      </span>
+                      <p className="text-[#8b949e] leading-relaxed">
+                        {result.why_suboptimal}
+                      </p>
+                    </div>
+                  )}
                 </div>
 
                 {/* Progressive Hints Section */}

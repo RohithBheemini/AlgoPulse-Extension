@@ -92,11 +92,11 @@ export default async function DashboardPage() {
           </div>
         </div>
 
-        {/* Card 3: Algorithmic Optimality (Google Yellow) */}
+        {/* Card 3: Algorithmic Approach (Google Yellow) */}
         <div className="p-5 rounded-xl bg-[#161b22] border border-[#30363d] shadow-sm hover:border-[#8b949e]/50 transition">
           <div className="flex items-center justify-between">
             <span className="text-xs font-semibold text-[#8b949e] uppercase tracking-wider">
-              Algorithmic Optimality
+              Algorithmic Approach
             </span>
             <div className="p-2 rounded-lg bg-[#FBBC05]/15 text-[#FBBC05] border border-[#FBBC05]/30">
               <Zap className="w-4 h-4 fill-[#FBBC05]/30" />
@@ -109,15 +109,15 @@ export default async function DashboardPage() {
             <span className="text-xs text-[#8b949e]">/ 35 pts</span>
           </div>
           <p className="mt-1 text-[11px] text-[#8b949e]">
-            {Math.round((analytics.averageOptimality / 35) * 100)}% optimal paradigm choice
+            {Math.round((analytics.averageOptimality / 35) * 100)}% paradigm selection score
           </p>
         </div>
 
-        {/* Card 4: Time Complexity Efficiency (Google Red) */}
+        {/* Card 4: Approach Optimality (Google Red) */}
         <div className="p-5 rounded-xl bg-[#161b22] border border-[#30363d] shadow-sm hover:border-[#8b949e]/50 transition">
           <div className="flex items-center justify-between">
             <span className="text-xs font-semibold text-[#8b949e] uppercase tracking-wider">
-              Time Efficiency
+              Approach Optimality
             </span>
             <div className="p-2 rounded-lg bg-[#EA4335]/15 text-[#EA4335] border border-[#EA4335]/30">
               <Clock className="w-4 h-4" />
@@ -130,7 +130,7 @@ export default async function DashboardPage() {
             <span className="text-xs text-[#8b949e]">/ 25 pts</span>
           </div>
           <p className="mt-1 text-[11px] text-[#8b949e]">
-            {Math.round((analytics.averageTimeScore / 25) * 100)}% Big-O time efficiency
+            {Math.round((analytics.averageTimeScore / 25) * 100)}% strategy efficiency
           </p>
         </div>
       </div>
@@ -224,8 +224,8 @@ export default async function DashboardPage() {
               <tr className="border-b border-[#30363d] text-[#8b949e]">
                 <th className="pb-3 font-semibold">Problem</th>
                 <th className="pb-3 font-semibold">Difficulty</th>
-                <th className="pb-3 font-semibold">Your Complexity</th>
-                <th className="pb-3 font-semibold">Optimal Complexity</th>
+                <th className="pb-3 font-semibold">Your Approach</th>
+                <th className="pb-3 font-semibold">Optimal Approach</th>
                 <th className="pb-3 font-semibold">Score</th>
                 <th className="pb-3 font-semibold">Date</th>
                 <th className="pb-3 font-semibold text-right">Action</th>

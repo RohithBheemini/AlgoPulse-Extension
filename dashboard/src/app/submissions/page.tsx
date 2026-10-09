@@ -144,14 +144,18 @@ export default function SubmissionsPage() {
                 </p>
               </div>
 
-              <div className="p-3 rounded-lg bg-[#0d1117] border border-[#30363d] text-[11px] space-y-1">
-                <div className="flex justify-between">
-                  <span className="text-[#8b949e]">Your Time:</span>
-                  <span className="font-mono text-[#c9d1d9]">{sub.user_time_complexity}</span>
+              <div className="p-3 rounded-lg bg-[#0d1117] border border-[#30363d] text-[11px] space-y-1.5">
+                <div className="flex justify-between items-center">
+                  <span className="text-[#8b949e]">Your Approach:</span>
+                  <span className="font-mono text-[#c9d1d9] text-right truncate max-w-[160px]" title={sub.user_time_complexity}>
+                    {sub.user_time_complexity}
+                  </span>
                 </div>
-                <div className="flex justify-between">
-                  <span className="text-[#8b949e]">Optimal Time:</span>
-                  <span className="font-mono text-[#4285F4] font-medium">{sub.optimal_time_complexity}</span>
+                <div className="flex justify-between items-center">
+                  <span className="text-[#8b949e]">Optimal Approach:</span>
+                  <span className="font-mono text-[#4285F4] font-medium text-right truncate max-w-[160px]" title={sub.optimal_time_complexity}>
+                    {sub.optimal_time_complexity}
+                  </span>
                 </div>
               </div>
 
