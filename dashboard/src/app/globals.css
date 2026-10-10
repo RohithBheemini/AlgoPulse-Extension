@@ -13,6 +13,7 @@ body {
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans", Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji";
   min-height: 100vh;
   -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
 }
 
 /* GitHub style scrollbars */
@@ -40,5 +41,97 @@ body {
 }
 
 .google-gradient-radial {
-  background: radial-gradient(circle at 50% 0%, rgba(66, 133, 244, 0.12), transparent 70%);
+  background: radial-gradient(circle at 50% 0%, rgba(66, 133, 244, 0.15), transparent 70%);
+}
+
+.google-text-gradient {
+  background: linear-gradient(135deg, #4285F4 0%, #EA4335 35%, #FBBC05 70%, #34A853 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+/* Dynamic Colorful Lighting Background Animations */
+@keyframes floatOrbBlue {
+  0%, 100% {
+    transform: translate(0px, 0px) scale(1);
+    opacity: 0.35;
+  }
+  50% {
+    transform: translate(60px, 40px) scale(1.15);
+    opacity: 0.55;
+  }
+}
+
+@keyframes floatOrbRed {
+  0%, 100% {
+    transform: translate(0px, 0px) scale(1.1);
+    opacity: 0.3;
+  }
+  50% {
+    transform: translate(-50px, 50px) scale(0.95);
+    opacity: 0.5;
+  }
+}
+
+@keyframes floatOrbYellow {
+  0%, 100% {
+    transform: translate(0px, 0px) scale(1);
+    opacity: 0.25;
+  }
+  50% {
+    transform: translate(40px, -45px) scale(1.1);
+    opacity: 0.45;
+  }
+}
+
+@keyframes floatOrbGreen {
+  0%, 100% {
+    transform: translate(0px, 0px) scale(1.05);
+    opacity: 0.35;
+  }
+  50% {
+    transform: translate(-60px, -30px) scale(1.2);
+    opacity: 0.6;
+  }
+}
+
+.orb-blue {
+  animation: floatOrbBlue 12s ease-in-out infinite;
+}
+
+.orb-red {
+  animation: floatOrbRed 15s ease-in-out infinite;
+}
+
+.orb-yellow {
+  animation: floatOrbYellow 14s ease-in-out infinite;
+}
+
+.orb-green {
+  animation: floatOrbGreen 16s ease-in-out infinite;
+}
+
+/* Subtle Shimmer Effect */
+@keyframes pulseGlow {
+  0%, 100% {
+    box-shadow: 0 0 25px -5px rgba(66, 133, 244, 0.25);
+  }
+  50% {
+    box-shadow: 0 0 35px 2px rgba(52, 168, 83, 0.35);
+  }
+}
+
+.pulse-glow {
+  animation: pulseGlow 6s ease-in-out infinite;
+}
+
+/* Heatmap Tooltip & Grid styling */
+.heatmap-cell {
+  transition: transform 0.15s ease, outline 0.15s ease;
+}
+
+.heatmap-cell:hover {
+  transform: scale(1.25);
+  z-index: 10;
+  outline: 2px solid #58a6ff;
 }

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getAllSubmissions, insertSubmission } from '@/lib/storage';
 import { getAdminClient } from '@/lib/supabase/admin';
+import { createServerSupabaseClient } from '@/lib/supabase/server';
 
 // Enable CORS for Chrome Extension requests
 export async function OPTIONS() {
@@ -16,7 +17,22 @@ export async function OPTIONS() {
 
 export async function GET(req: NextRequest) {
   try {
-    const submissions = await getAllSubmissions();
+    let userId: string | undefined = req.nextUrl.searchParams.get('userId') || undefined;
+
+    // If no userId query param, check if authenticated via Supabase session cookie
+    if (!userId) {
+      try {
+        const supabase = createServerSupabaseClient();
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user) {
+          userId = user.id;
+        }
+      } catch {
+        // Not authenticated via cookies, return public submissions
+      }
+    }
+
+    const submissions = await getAllSubmissions(userId);
     return NextResponse.json(submissions, {
       headers: {
         'Access-Control-Allow-Origin': '*'
@@ -37,7 +53,7 @@ export async function POST(req: NextRequest) {
 
     let userId: string | undefined = undefined;
 
-    // Look up user by extension token in Supabase
+    // 1. Look up user by extension token in Supabase
     const admin = getAdminClient();
     if (admin && token) {
       const { data: profile } = await admin
@@ -51,7 +67,25 @@ export async function POST(req: NextRequest) {
       }
     }
 
+    // 2. Fallback: check if session cookie is present
+    if (!userId) {
+      try {
+        const supabase = createServerSupabaseClient();
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user) {
+          userId = user.id;
+        }
+      } catch {
+        // Ignore
+      }
+    }
+
     const body = await req.json();
+
+    // 3. Fallback: check if user_id was passed in body
+    if (!userId && body.user_id) {
+      userId = body.user_id;
+    }
 
     if (!body.problem_title || !body.user_code || body.overall_score === undefined) {
       return NextResponse.json(

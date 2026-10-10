@@ -169,7 +169,7 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
         };
 
         let syncStatus = { synced: false, message: 'Auto-sync disabled' };
-        if (settings.autoSync && settings.dashboardUrl && settings.extensionToken) {
+        if (settings.autoSync && settings.dashboardUrl) {
           const syncResult = await syncToDashboard(syncPayload, settings);
           syncStatus = { synced: syncResult.success, message: syncResult.message };
         }

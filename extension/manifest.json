@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
-  "name": "AlgoPulse - AI LeetCode Reviewer & Tracker",
-  "version": "1.0.0",
-  "description": "AI-powered algorithmic analysis, complexity scoring, and automatic dashboard sync for LeetCode.",
+  "name": "AlgoPulse - AI Code Reviewer & Tracker",
+  "version": "1.1.0",
+  "description": "AI-powered algorithmic analysis, complexity scoring, and automatic dashboard sync for LeetCode, GeeksforGeeks, and HackerRank.",
   "permissions": [
     "storage",
     "activeTab"
@@ -10,6 +10,8 @@
   "host_permissions": [
     "https://leetcode.com/*",
     "https://*.leetcode.com/*",
+    "https://*.geeksforgeeks.org/*",
+    "https://*.hackerrank.com/*",
     "https://generativelanguage.googleapis.com/*",
     "http://localhost:*/*",
     "https://*/*"
@@ -35,7 +37,9 @@
     {
       "matches": [
         "https://leetcode.com/*",
-        "https://*.leetcode.com/*"
+        "https://*.leetcode.com/*",
+        "https://*.geeksforgeeks.org/*",
+        "https://*.hackerrank.com/*"
       ],
       "js": [
         "injected.js"
@@ -46,7 +50,9 @@
     {
       "matches": [
         "https://leetcode.com/*",
-        "https://*.leetcode.com/*"
+        "https://*.leetcode.com/*",
+        "https://*.geeksforgeeks.org/*",
+        "https://*.hackerrank.com/*"
       ],
       "js": [
         "content.js"
@@ -65,7 +71,9 @@
       ],
       "matches": [
         "https://leetcode.com/*",
-        "https://*.leetcode.com/*"
+        "https://*.leetcode.com/*",
+        "https://*.geeksforgeeks.org/*",
+        "https://*.hackerrank.com/*"
       ]
     }
   ]

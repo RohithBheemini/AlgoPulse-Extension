@@ -55,8 +55,18 @@ export const Navbar: React.FC = () => {
                   : 'text-[#8b949e] hover:text-[#f0f6fc] hover:bg-[#21262d]/60'
               }`}
             >
-              <LayoutDashboard className={`w-4 h-4 ${pathname === '/' ? 'text-[#4285F4]' : 'text-[#8b949e]'}`} />
-              <span>Overview</span>
+              <span>Home</span>
+            </Link>
+            <Link
+              href="/dashboard"
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition ${
+                pathname === '/dashboard'
+                  ? 'bg-[#21262d] text-[#f0f6fc] border border-[#30363d]'
+                  : 'text-[#8b949e] hover:text-[#f0f6fc] hover:bg-[#21262d]/60'
+              }`}
+            >
+              <LayoutDashboard className={`w-4 h-4 ${pathname === '/dashboard' ? 'text-[#4285F4]' : 'text-[#8b949e]'}`} />
+              <span>Dashboard</span>
             </Link>
             <Link
               href="/submissions"
@@ -70,6 +80,17 @@ export const Navbar: React.FC = () => {
               <span>Submissions</span>
             </Link>
             <Link
+              href="/profile"
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition ${
+                pathname === '/profile'
+                  ? 'bg-[#21262d] text-[#f0f6fc] border border-[#30363d]'
+                  : 'text-[#8b949e] hover:text-[#f0f6fc] hover:bg-[#21262d]/60'
+              }`}
+            >
+              <User className={`w-4 h-4 ${pathname === '/profile' ? 'text-[#EA4335]' : 'text-[#8b949e]'}`} />
+              <span>Profile</span>
+            </Link>
+            <Link
               href="/settings"
               className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition ${
                 pathname === '/settings'
@@ -78,7 +99,7 @@ export const Navbar: React.FC = () => {
               }`}
             >
               <Key className={`w-4 h-4 ${pathname === '/settings' ? 'text-[#FBBC05]' : 'text-[#8b949e]'}`} />
-              <span>Extension Token</span>
+              <span>Token</span>
             </Link>
           </nav>
         </div>
@@ -99,21 +120,27 @@ export const Navbar: React.FC = () => {
             <>
               {user ? (
                 <div className="flex items-center gap-2">
-                  <div className="hidden sm:flex flex-col text-right">
+                  <Link
+                    href="/profile"
+                    className="hidden sm:flex flex-col text-right hover:opacity-80 transition"
+                  >
                     <span className="text-xs font-semibold text-[#f0f6fc] truncate max-w-[140px]">
                       {profile?.display_name || user.email?.split('@')[0]}
                     </span>
                     <span className="text-[10px] text-[#8b949e] truncate max-w-[140px]">
                       {user.email}
                     </span>
-                  </div>
-                  <div className="w-8 h-8 rounded-full bg-[#21262d] text-[#4285F4] font-bold text-xs flex items-center justify-center border border-[#30363d]">
+                  </Link>
+                  <Link
+                    href="/profile"
+                    className="w-8 h-8 rounded-full bg-[#21262d] hover:ring-2 hover:ring-[#4285F4] text-[#4285F4] font-bold text-xs flex items-center justify-center border border-[#30363d] transition cursor-pointer"
+                  >
                     {user.email?.charAt(0).toUpperCase() || 'U'}
-                  </div>
+                  </Link>
                   <button
                     onClick={signOut}
                     title="Sign Out"
-                    className="p-1.5 text-[#8b949e] hover:text-[#EA4335] hover:bg-[#21262d] rounded-lg transition"
+                    className="p-1.5 text-[#8b949e] hover:text-[#EA4335] hover:bg-[#21262d] rounded-lg transition cursor-pointer"
                   >
                     <LogOut className="w-4 h-4" />
                   </button>

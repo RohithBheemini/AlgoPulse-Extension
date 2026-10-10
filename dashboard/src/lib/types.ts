@@ -3,7 +3,7 @@ export interface SubmissionRecord {
   user_id?: string;
   problem_title: string;
   problem_slug: string;
-  platform: string;
+  platform: 'leetcode' | 'geeksforgeeks' | 'hackerrank' | 'other' | string;
   difficulty: 'Easy' | 'Medium' | 'Hard' | string;
   language: string;
   user_code: string;
@@ -29,6 +29,19 @@ export interface SubmissionRecord {
   created_at: string;
 }
 
+export interface HeatmapDay {
+  date: string;
+  count: number;
+  level: 0 | 1 | 2 | 3 | 4;
+  problems: string[];
+}
+
+export interface StreakStats {
+  currentStreak: number;
+  longestStreak: number;
+  totalActiveDays: number;
+}
+
 export interface AnalyticsSummary {
   totalSubmissions: number;
   averageScore: number;
@@ -40,9 +53,18 @@ export interface AnalyticsSummary {
     Medium: number;
     Hard: number;
   };
+  platformCounts: {
+    leetcode: number;
+    geeksforgeeks: number;
+    hackerrank: number;
+    other: number;
+  };
   recentTrend: Array<{
     date: string;
     score: number;
     problem: string;
   }>;
+  heatmap: HeatmapDay[];
+  streaks: StreakStats;
+  topParadigms: Array<{ name: string; count: number }>;
 }
