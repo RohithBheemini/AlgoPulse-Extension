@@ -1,0 +1,140 @@
+{
+  "name": "algopulse-vscode",
+  "displayName": "AlgoPulse - AI Code Review & Intelligence",
+  "description": "Free AI-powered algorithmic approach review, 4-pillar scoring, progressive hints, and live dashboard sync for VS Code.",
+  "version": "1.0.0",
+  "publisher": "algopulse",
+  "engines": {
+    "vscode": "^1.80.0"
+  },
+  "categories": [
+    "Programming Languages",
+    "Education",
+    "Linters",
+    "Other"
+  ],
+  "keywords": [
+    "leetcode",
+    "algorithms",
+    "ai",
+    "gemini",
+    "dsa",
+    "code review",
+    "big-o"
+  ],
+  "main": "./dist/extension.js",
+  "activationEvents": [
+    "onCommand:algopulse.analyzeCode",
+    "onCommand:algopulse.openDashboard",
+    "onCommand:algopulse.configureSettings",
+    "onView:algopulse.sidebarView"
+  ],
+  "contributes": {
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "algopulse-activitybar",
+          "title": "AlgoPulse",
+          "icon": "resources/icon.svg"
+        }
+      ]
+    },
+    "views": {
+      "algopulse-activitybar": [
+        {
+          "type": "webview",
+          "id": "algopulse.sidebarView",
+          "name": "AlgoPulse Reviewer"
+        }
+      ]
+    },
+    "commands": [
+      {
+        "command": "algopulse.analyzeCode",
+        "title": "AlgoPulse: Analyze Current Code File",
+        "icon": "$(sparkle)"
+      },
+      {
+        "command": "algopulse.openDashboard",
+        "title": "AlgoPulse: Open Live Dashboard",
+        "icon": "$(dashboard)"
+      },
+      {
+        "command": "algopulse.configureSettings",
+        "title": "AlgoPulse: Configure API Key & Dashboard",
+        "icon": "$(gear)"
+      }
+    ],
+    "menus": {
+      "editor/context": [
+        {
+          "command": "algopulse.analyzeCode",
+          "group": "AlgoPulse@1",
+          "when": "editorHasSelection || editorTextFocus"
+        }
+      ],
+      "editor/title": [
+        {
+          "command": "algopulse.analyzeCode",
+          "group": "navigation@100",
+          "when": "editorTextFocus"
+        }
+      ]
+    },
+    "keybindings": [
+      {
+        "command": "algopulse.analyzeCode",
+        "key": "ctrl+alt+a",
+        "mac": "cmd+alt+a",
+        "when": "editorTextFocus"
+      }
+    ],
+    "configuration": {
+      "title": "AlgoPulse",
+      "properties": {
+        "algopulse.geminiApiKey": {
+          "type": "string",
+          "default": "",
+          "description": "Your free Google Gemini API Key from Google AI Studio (https://aistudio.google.com/app/apikey)."
+        },
+        "algopulse.dashboardUrl": {
+          "type": "string",
+          "default": "http://localhost:3000",
+          "description": "URL of your AlgoPulse Dashboard (default: http://localhost:3000)."
+        },
+        "algopulse.extensionToken": {
+          "type": "string",
+          "default": "",
+          "description": "Your personal AlgoPulse Extension Token from your Dashboard Profile page."
+        },
+        "algopulse.autoSync": {
+          "type": "boolean",
+          "default": true,
+          "description": "Automatically sync submissions to your AlgoPulse dashboard upon evaluation."
+        },
+        "algopulse.preferredModel": {
+          "type": "string",
+          "default": "gemini-3.8-flash",
+          "enum": [
+            "gemini-3.8-flash",
+            "gemini-2.0-flash",
+            "gemini-1.5-flash",
+            "auto"
+          ],
+          "description": "Preferred free Gemini model for code review."
+        }
+      }
+    }
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run build",
+    "build": "node scripts/build.mjs",
+    "watch": "node scripts/build.mjs --watch"
+  },
+  "devDependencies": {
+    "@types/node": "^20.11.0",
+    "@types/vscode": "^1.80.0",
+    "esbuild": "^0.20.0",
+    "typescript": "^5.3.3"
+  }
+}

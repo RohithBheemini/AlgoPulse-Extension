@@ -1,5 +1,31 @@
 [
   {
+    "problem_title": "Two Sum (VS Code Test)",
+    "problem_slug": "two-sum",
+    "platform": "vscode",
+    "difficulty": "Easy",
+    "language": "python3",
+    "user_code": "class Solution:\n    def twoSum(self, nums, target):\n        lookup = {}\n        for i, n in enumerate(nums):\n            diff = target - n\n            if diff in lookup:\n                return [lookup[diff], i]\n            lookup[n] = i\n        return []",
+    "overall_score": 96,
+    "optimality_score": 35,
+    "time_score": 25,
+    "space_score": 18,
+    "cleanliness_score": 18,
+    "user_time_complexity": "Hash Map Single-Pass (O(N))",
+    "user_space_complexity": "O(N)",
+    "optimal_time_complexity": "Hash Map Single-Pass (O(N))",
+    "optimal_space_complexity": "O(N)",
+    "why_suboptimal": "Solution is optimal single-pass hash map.",
+    "why_ideal": "Single pass over nums with O(1) average lookup.",
+    "summary_feedback": "Optimal hash map solution.",
+    "improvements": [
+      "Idiomatic and clean."
+    ],
+    "optimal_code": "class Solution:\n    def twoSum(self, nums, target):\n        lookup = {}\n        for i, n in enumerate(nums):\n            diff = target - n\n            if diff in lookup:\n                return [lookup[diff], i]\n            lookup[n] = i\n        return []",
+    "id": "sub_1791705516355_94euu",
+    "created_at": "2026-10-11T07:58:36.355Z"
+  },
+  {
     "id": "sub_1791382494164_m98v3",
     "problem_title": "Valid Palindrome",
     "problem_slug": "valid-palindrome",
