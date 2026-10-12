@@ -149,7 +149,7 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
           problem_title: metadata.title,
           problem_slug: metadata.slug,
           platform: metadata.platform,
-          difficulty: metadata.difficulty,
+          difficulty: (metadata.difficulty && metadata.difficulty !== 'Unknown') ? metadata.difficulty : (analysis.assessed_difficulty || 'Medium'),
           language: metadata.language,
           user_code: metadata.code,
           overall_score: analysis.score,

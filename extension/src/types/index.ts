@@ -37,6 +37,7 @@ export interface AIAnalysisResult {
   best_approach: OptimalApproachAnalysis;
   why_suboptimal?: string;
   why_ideal?: string;
+  assessed_difficulty?: 'Easy' | 'Medium' | 'Hard';
   hints: [string, string, string]; // [Tier 1 Nudge, Tier 2 Pattern, Tier 3 Strategy]
   improvements: string[];
   optimal_code: string;

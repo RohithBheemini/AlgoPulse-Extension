@@ -112,6 +112,7 @@ You MUST return ONLY valid JSON strictly adhering to this schema:
     "tier2_pattern": string,
     "tier3_strategy": string
   },
+  "assessed_difficulty": "Easy" | "Medium" | "Hard",
   "improvements": [string],
   "optimal_code": string
 }`;

@@ -30,8 +30,9 @@ export async function GET(req: NextRequest) {
     const difficulty = req.nextUrl.searchParams.get('difficulty');
     if (difficulty) {
       const cleanDiff = difficulty.toLowerCase().trim();
+      const targetDiff = ['easy', 'basic', 'school'].includes(cleanDiff) ? 'easy' : cleanDiff;
       submissions = submissions.filter(
-        (s) => s.difficulty?.toLowerCase() === cleanDiff
+        (s) => s.difficulty?.toLowerCase() === targetDiff
       );
     }
 
@@ -108,9 +109,15 @@ export async function POST(req: NextRequest) {
     const rawPlatform = (body.platform || 'leetcode').toString().toLowerCase().trim();
     const platform = rawPlatform.slice(0, 50);
 
-    const rawDifficulty = (body.difficulty || 'Medium').toString().trim();
-    const difficulty: 'Easy' | 'Medium' | 'Hard' =
-      ['Easy', 'Medium', 'Hard'].includes(rawDifficulty) ? rawDifficulty as any : 'Medium';
+    const rawDiffLower = (body.difficulty || 'Medium').toString().trim().toLowerCase();
+    let difficulty: 'Easy' | 'Medium' | 'Hard' = 'Medium';
+    if (['easy', 'basic', 'school'].includes(rawDiffLower)) {
+      difficulty = 'Easy';
+    } else if (rawDiffLower === 'hard') {
+      difficulty = 'Hard';
+    } else {
+      difficulty = 'Medium';
+    }
 
     // Length-guarded strings
     const problemTitle = body.problem_title.trim().slice(0, 250);

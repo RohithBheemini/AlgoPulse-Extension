@@ -110,6 +110,7 @@ You MUST return ONLY valid JSON strictly adhering to this schema:
   },
   "why_suboptimal": string,
   "why_ideal": string,
+  "assessed_difficulty": "Easy" | "Medium" | "Hard",
   "hints": [string, string, string],
   "improvements": [string, string],
   "optimal_code": string

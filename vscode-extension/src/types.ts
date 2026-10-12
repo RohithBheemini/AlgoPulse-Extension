@@ -50,6 +50,7 @@ export interface AIAnalysisResult {
   hints: ProgressiveHints;
   improvements: string[];
   optimal_code: string;
+  assessed_difficulty?: 'Easy' | 'Medium' | 'Hard';
   model_used?: string;
 }
 

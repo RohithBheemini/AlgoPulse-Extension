@@ -46,6 +46,7 @@ create table if not exists public.submissions (
   
   summary_feedback text,
   improvements jsonb default '[]'::jsonb,
+  follow_up_questions jsonb default '[]'::jsonb,
   optimal_code text,
   created_at timestamp with time zone default timezone('utc'::text, now())
 );

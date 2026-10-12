@@ -189,7 +189,7 @@ export class AlgoPulseSidebarProvider implements vscode.WebviewViewProvider {
           problem_title: metadata.title,
           problem_slug: metadata.slug,
           platform: 'vscode',
-          difficulty: metadata.difficulty,
+          difficulty: result.assessed_difficulty || metadata.difficulty || 'Medium',
           language: metadata.language,
           user_code: metadata.code,
           overall_score: result.score,
