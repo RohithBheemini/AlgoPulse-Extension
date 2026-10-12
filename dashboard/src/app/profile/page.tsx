@@ -8,6 +8,7 @@ import {
   Copy,
   Check,
   Shield,
+  ShieldCheck,
   Award,
   Activity,
   Code2,
@@ -115,7 +116,14 @@ export default function ProfilePage() {
             </div>
           </div>
 
-          <div className="flex items-center gap-3">
+          <div className="flex flex-wrap items-center gap-3">
+            <Link
+              href="/verify"
+              className="px-3.5 py-2 rounded-xl bg-[#34A853]/15 hover:bg-[#34A853]/25 text-[#34A853] border border-[#34A853]/30 text-xs font-semibold shadow-sm transition flex items-center gap-1.5 cursor-pointer"
+            >
+              <ShieldCheck className="w-3.5 h-3.5" />
+              <span>Public Transcript</span>
+            </Link>
             <Link
               href="/dashboard"
               className="px-4 py-2 rounded-xl bg-[#4285F4] hover:bg-[#3367D6] text-white text-xs font-semibold shadow-md shadow-[#4285F4]/20 transition flex items-center gap-1.5 cursor-pointer"
@@ -249,6 +257,31 @@ export default function ProfilePage() {
             Solve problems on LeetCode, GeeksforGeeks, or HackerRank using AlgoPulse to unlock your paradigm mastery profile.
           </p>
         )}
+      </div>
+
+      {/* Verified Public Portfolio Banner */}
+      <div className="p-6 rounded-2xl bg-gradient-to-r from-[#161b22] to-[#1c2128] border border-[#34A853]/30 space-y-3 relative overflow-hidden">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div className="space-y-1">
+            <div className="flex items-center gap-2">
+              <ShieldCheck className="w-5 h-5 text-[#34A853]" />
+              <h2 className="text-sm font-bold text-[#f0f6fc]">Public Verified Interview Transcript</h2>
+              <span className="px-2 py-0.5 rounded-full bg-[#34A853]/15 text-[#34A853] text-[10px] font-semibold border border-[#34A853]/30">
+                Shareable Proof
+              </span>
+            </div>
+            <p className="text-xs text-[#8b949e] max-w-xl">
+              Showcase your FAANG-readiness, spaced repetition retention, and 14-paradigm competency to recruiters and engineering leads without exposing your secret extension token.
+            </p>
+          </div>
+          <Link
+            href="/verify"
+            className="px-4 py-2.5 rounded-xl bg-[#34A853] hover:bg-[#2d9249] text-white text-xs font-semibold shadow-md shadow-[#34A853]/20 transition flex items-center justify-center gap-2 shrink-0 cursor-pointer"
+          >
+            <span>View Public Transcript</span>
+            <ExternalLink className="w-3.5 h-3.5" />
+          </Link>
+        </div>
       </div>
     </div>
   );

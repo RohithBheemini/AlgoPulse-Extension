@@ -11,7 +11,8 @@ import {
   ExternalLink,
   LogIn,
   LogOut,
-  User
+  User,
+  ShieldCheck
 } from 'lucide-react';
 import { useAuth } from './AuthProvider';
 
@@ -78,6 +79,17 @@ export const Navbar: React.FC = () => {
             >
               <Code2 className={`w-4 h-4 ${pathname.startsWith('/submissions') ? 'text-[#34A853]' : 'text-[#8b949e]'}`} />
               <span>Submissions</span>
+            </Link>
+            <Link
+              href="/verify"
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition ${
+                pathname === '/verify'
+                  ? 'bg-[#21262d] text-[#f0f6fc] border border-[#30363d]'
+                  : 'text-[#8b949e] hover:text-[#f0f6fc] hover:bg-[#21262d]/60'
+              }`}
+            >
+              <ShieldCheck className={`w-4 h-4 ${pathname === '/verify' ? 'text-[#34A853]' : 'text-[#8b949e]'}`} />
+              <span>Verify</span>
             </Link>
             <Link
               href="/profile"

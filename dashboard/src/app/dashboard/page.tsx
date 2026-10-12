@@ -19,7 +19,11 @@ import {
   CheckCircle2,
   Key,
   Copy,
-  Check
+  Check,
+  Brain,
+  Target,
+  RotateCcw,
+  AlertCircle
 } from 'lucide-react';
 import { AnalyticsSummary, SubmissionRecord } from '@/lib/types';
 import { ScoreTrendChart } from '@/components/AnalyticsCharts';
@@ -34,6 +38,7 @@ export default function DedicatedDashboardPage() {
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [lastUpdated, setLastUpdated] = useState<Date>(new Date());
   const [copiedToken, setCopiedToken] = useState(false);
+  const [paradigmFilter, setParadigmFilter] = useState<'All' | 'Ready' | 'Practicing' | 'Blind Spot'>('All');
 
   const fetchData = useCallback(async (isManual = false) => {
     if (isManual) setIsRefreshing(true);
@@ -315,6 +320,187 @@ export default function DedicatedDashboardPage() {
         heatmap={safeAnalytics.heatmap}
         streaks={safeAnalytics.streaks}
       />
+
+      {/* 14-PARADIGM INTERVIEW READINESS MATRIX & BLIND-SPOT RADAR */}
+      <div className="p-6 rounded-2xl bg-[#161b22] border border-[#30363d] space-y-5">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-4 border-b border-[#30363d]">
+          <div className="space-y-1">
+            <div className="flex items-center gap-2">
+              <span className="p-1.5 rounded-lg bg-[#4285F4]/15 text-[#4285F4] border border-[#4285F4]/30">
+                <Brain className="w-4 h-4" />
+              </span>
+              <h2 className="text-sm font-bold text-[#f0f6fc]">
+                14-Paradigm Interview Competency &amp; Blind-Spot Radar
+              </h2>
+            </div>
+            <p className="text-xs text-[#8b949e]">
+              Rigorous competency mapping against FAANG and Tier-1 algorithmic interview archetypes
+            </p>
+          </div>
+
+          <div className="flex items-center gap-3">
+            {/* Readiness Index Pill */}
+            <div className="flex items-center gap-2.5 px-3.5 py-1.5 rounded-xl bg-[#0d1117] border border-[#30363d]">
+              <Target className="w-4 h-4 text-[#34A853]" />
+              <div className="text-xs">
+                <span className="text-[#8b949e]">Tier-1 Readiness: </span>
+                <span className="font-extrabold text-[#34A853]">
+                  {safeAnalytics.readinessScore || 75}%
+                </span>
+              </div>
+            </div>
+
+            <Link
+              href="/verify"
+              className="text-xs text-[#4285F4] hover:underline flex items-center gap-1 font-semibold"
+            >
+              <span>Public Proof ➔</span>
+            </Link>
+          </div>
+        </div>
+
+        {/* Filter Pills */}
+        <div className="flex flex-wrap items-center gap-2">
+          {(['All', 'Ready', 'Practicing', 'Blind Spot'] as const).map((tab) => {
+            const count = (safeAnalytics.paradigmMatrix || []).filter((p) =>
+              tab === 'All' ? true : p.status === tab
+            ).length;
+            return (
+              <button
+                key={tab}
+                onClick={() => setParadigmFilter(tab)}
+                className={`px-3 py-1 rounded-lg text-xs font-medium transition cursor-pointer ${
+                  paradigmFilter === tab
+                    ? 'bg-[#4285F4] text-white shadow-sm'
+                    : 'bg-[#0d1117] text-[#8b949e] hover:text-[#f0f6fc] border border-[#30363d]'
+                }`}
+              >
+                {tab} ({count})
+              </button>
+            );
+          })}
+        </div>
+
+        {/* Paradigm Matrix Grid */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
+          {(safeAnalytics.paradigmMatrix || [])
+            .filter((p) => (paradigmFilter === 'All' ? true : p.status === paradigmFilter))
+            .map((item, idx) => {
+              const statusBadge =
+                item.status === 'Ready'
+                  ? 'bg-[#34A853]/15 text-[#34A853] border-[#34A853]/30'
+                  : item.status === 'Practicing'
+                  ? 'bg-[#FBBC05]/15 text-[#FBBC05] border-[#FBBC05]/30'
+                  : 'bg-[#EA4335]/10 text-[#EA4335] border-[#EA4335]/20';
+
+              return (
+                <div
+                  key={idx}
+                  className="p-3.5 rounded-xl bg-[#0d1117] border border-[#30363d] space-y-2.5 hover:border-[#4285F4]/50 transition"
+                >
+                  <div className="flex items-center justify-between">
+                    <span className="text-[10px] text-[#8b949e] font-mono">{item.category}</span>
+                    <span className={`px-2 py-0.5 rounded-full text-[10px] font-semibold border ${statusBadge}`}>
+                      {item.status}
+                    </span>
+                  </div>
+
+                  <div>
+                    <h3 className="text-xs font-bold text-[#f0f6fc] truncate">{item.name}</h3>
+                    <div className="flex items-center justify-between text-[11px] text-[#8b949e] mt-1">
+                      <span>{item.solvedCount} solved</span>
+                      <span className="font-mono text-[#c9d1d9]">{item.masteryScore}/100</span>
+                    </div>
+                  </div>
+
+                  <div className="h-1.5 w-full bg-[#21262d] rounded-full overflow-hidden">
+                    <div
+                      className={`h-full rounded-full transition-all duration-500 ${
+                        item.status === 'Ready'
+                          ? 'bg-[#34A853]'
+                          : item.status === 'Practicing'
+                          ? 'bg-[#FBBC05]'
+                          : 'bg-[#EA4335]'
+                      }`}
+                      style={{ width: `${Math.max(5, item.masteryScore)}%` }}
+                    />
+                  </div>
+                </div>
+              );
+            })}
+        </div>
+      </div>
+
+      {/* ALGORITHMIC SPACED REPETITION (FORGETTING CURVE REVIEW QUEUE) */}
+      <div className="p-6 rounded-2xl bg-[#161b22] border border-[#30363d] space-y-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-[#30363d]">
+          <div className="flex items-center gap-2">
+            <span className="p-1.5 rounded-lg bg-[#FBBC05]/15 text-[#FBBC05] border border-[#FBBC05]/30">
+              <RotateCcw className="w-4 h-4" />
+            </span>
+            <div>
+              <h2 className="text-sm font-bold text-[#f0f6fc]">
+                Algorithmic Spaced Repetition (The Forgetting Curve)
+              </h2>
+              <p className="text-xs text-[#8b949e]">
+                Interventions scheduled before pattern recognition decays
+              </p>
+            </div>
+          </div>
+          <span className="px-2.5 py-1 rounded-full bg-[#34A853]/15 text-[#34A853] border border-[#34A853]/30 text-[10px] font-semibold">
+            Cognitive Retention Active
+          </span>
+        </div>
+
+        {(!safeAnalytics.spacedReviewQueue || safeAnalytics.spacedReviewQueue.length === 0) ? (
+          <div className="py-8 text-center text-xs text-[#8b949e] border border-dashed border-[#30363d] rounded-xl space-y-1">
+            <p>No spaced reviews scheduled yet.</p>
+            <p className="text-[11px]">Solve problems to trigger the retention curve.</p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+            {safeAnalytics.spacedReviewQueue.map((item) => (
+              <div
+                key={item.id}
+                className="p-4 rounded-xl bg-[#0d1117] border border-[#30363d] space-y-3 hover:border-[#FBBC05]/50 transition flex flex-col justify-between"
+              >
+                <div className="space-y-1.5">
+                  <div className="flex items-center justify-between">
+                    <span
+                      className={`px-2 py-0.5 rounded-full text-[10px] font-semibold border ${
+                        item.urgency === 'Due Today'
+                          ? 'bg-[#EA4335]/15 text-[#EA4335] border-[#EA4335]/30 animate-pulse'
+                          : item.urgency === 'Upcoming'
+                          ? 'bg-[#FBBC05]/15 text-[#FBBC05] border-[#FBBC05]/30'
+                          : 'bg-[#34A853]/15 text-[#34A853] border-[#34A853]/30'
+                      }`}
+                    >
+                      {item.urgency}
+                    </span>
+                    <span className="text-[10px] text-[#8b949e]">Due in {item.dueInDays}d</span>
+                  </div>
+
+                  <h3 className="text-xs font-bold text-[#f0f6fc] truncate">{item.problemTitle}</h3>
+                  <p className="text-[11px] text-[#8b949e] truncate">{item.paradigm}</p>
+                </div>
+
+                <div className="space-y-1.5 pt-1 border-t border-[#21262d]">
+                  <div className="flex justify-between text-[10px] text-[#8b949e]">
+                    <span>Memory Decay</span>
+                    <span className="font-mono text-[#EA4335]">{item.decayPercent}%</span>
+                  </div>
+                  <div className="h-1.5 w-full bg-[#21262d] rounded-full overflow-hidden">
+                    <div
+                      className="h-full bg-gradient-to-r from-[#34A853] via-[#FBBC05] to-[#EA4335] rounded-full"
+                      style={{ width: `${item.decayPercent}%` }}
+                    />
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
 
       {/* CHARTS & PLATFORM DISTRIBUTION ROW */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">

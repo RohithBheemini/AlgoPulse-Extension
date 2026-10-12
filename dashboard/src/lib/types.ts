@@ -1,9 +1,15 @@
+export interface FollowUpQuestion {
+  question: string;
+  category: 'Scale' | 'Constraint' | 'Concurrency' | 'Edge Case' | string;
+  answer: string;
+}
+
 export interface SubmissionRecord {
   id: string;
   user_id?: string;
   problem_title: string;
   problem_slug: string;
-  platform: 'leetcode' | 'geeksforgeeks' | 'hackerrank' | 'other' | string;
+  platform: 'leetcode' | 'geeksforgeeks' | 'hackerrank' | 'vscode' | 'other' | string;
   difficulty: 'Easy' | 'Medium' | 'Hard' | string;
   language: string;
   user_code: string;
@@ -26,6 +32,9 @@ export interface SubmissionRecord {
   improvements: string[];
   optimal_code: string;
   
+  paradigm?: string;
+  follow_up_questions?: FollowUpQuestion[];
+  
   created_at: string;
 }
 
@@ -40,6 +49,24 @@ export interface StreakStats {
   currentStreak: number;
   longestStreak: number;
   totalActiveDays: number;
+}
+
+export interface ParadigmSkill {
+  name: string;
+  category: string;
+  solvedCount: number;
+  masteryScore: number;
+  status: 'Ready' | 'Practicing' | 'Blind Spot';
+}
+
+export interface SpacedReviewItem {
+  id: string;
+  problemTitle: string;
+  paradigm: string;
+  lastPracticed: string;
+  dueInDays: number;
+  urgency: 'Due Today' | 'Upcoming' | 'Mastered';
+  decayPercent: number;
 }
 
 export interface AnalyticsSummary {
@@ -68,4 +95,7 @@ export interface AnalyticsSummary {
   heatmap: HeatmapDay[];
   streaks: StreakStats;
   topParadigms: Array<{ name: string; count: number }>;
+  readinessScore?: number;
+  paradigmMatrix?: ParadigmSkill[];
+  spacedReviewQueue?: SpacedReviewItem[];
 }

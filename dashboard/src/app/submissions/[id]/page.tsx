@@ -6,7 +6,12 @@ import {
   Calendar,
   CheckCircle,
   Sparkles,
-  Award
+  Award,
+  HelpCircle,
+  MessageSquare,
+  Layers,
+  Cpu,
+  CheckCircle2
 } from 'lucide-react';
 import { getSubmissionById } from '@/lib/storage';
 
@@ -226,6 +231,65 @@ export default async function SubmissionDetailPage({
             </ul>
           </div>
         )}
+      </div>
+
+      {/* Senior Interviewer Follow-Up Curveballs (FAANG/Tier-1 Simulation) */}
+      <div className="p-6 rounded-xl bg-[#161b22] border border-[#30363d] space-y-4">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <div className="p-1.5 rounded-lg bg-[#FBBC05]/15 text-[#FBBC05] border border-[#FBBC05]/30">
+              <MessageSquare className="w-4 h-4" />
+            </div>
+            <div>
+              <h2 className="text-sm font-bold text-[#f0f6fc]">
+                Senior Interviewer Follow-Up Curveballs
+              </h2>
+              <p className="text-xs text-[#8b949e]">
+                Real Tier-1 architectural follow-ups tailored to your solution
+              </p>
+            </div>
+          </div>
+          <span className="text-[10px] px-2.5 py-0.5 rounded-full bg-[#FBBC05]/15 text-[#FBBC05] border border-[#FBBC05]/30 font-semibold uppercase">
+            Interview Simulation
+          </span>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-1">
+          {((submission.follow_up_questions && submission.follow_up_questions.length > 0)
+            ? submission.follow_up_questions
+            : [
+                {
+                  question: `What if the input dataset is unbounded (stream) or contains 10^11 items exceeding single-machine RAM?`,
+                  category: 'Scale Curveball',
+                  answer: `Use streaming data structures (e.g. MapReduce hash-partitioning, probabilistic filters, or sliding window ring buffers) to process elements in chunks without loading all state into memory.`
+                },
+                {
+                  question: `What if the input is read-only and auxiliary memory is strictly constrained to O(1)?`,
+                  category: 'Constraint Curveball',
+                  answer: `Trade CPU cycles for memory: explore two-pointer traversal, in-place binary search, or cycle detection algorithms that operate purely with index pointers without secondary buffer allocations.`
+                }
+              ]
+          ).map((fq, idx) => (
+            <div
+              key={idx}
+              className="p-4 rounded-xl bg-[#0d1117] border border-[#30363d] space-y-2.5 hover:border-[#4285F4]/40 transition"
+            >
+              <div className="flex items-center justify-between">
+                <span className="px-2 py-0.5 rounded bg-[#21262d] text-[#4285F4] text-[10px] font-mono font-semibold">
+                  {fq.category}
+                </span>
+                <span className="text-[10px] text-[#8b949e] font-mono">Q{idx + 1}</span>
+              </div>
+              <p className="text-xs font-semibold text-[#f0f6fc] leading-relaxed">
+                &ldquo;{fq.question}&rdquo;
+              </p>
+              <div className="p-3 rounded-lg bg-[#161b22] border border-[#30363d]/60 text-[11px] text-[#8b949e] space-y-1">
+                <span className="text-[#34A853] font-semibold block">Model Strategy Response:</span>
+                <p className="text-[#c9d1d9] leading-relaxed">{fq.answer}</p>
+              </div>
+            </div>
+          ))}
+        </div>
       </div>
     </div>
   );

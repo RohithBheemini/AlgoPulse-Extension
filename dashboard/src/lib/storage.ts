@@ -1,7 +1,15 @@
 import fs from 'fs';
 import path from 'path';
 import { createClient } from '@supabase/supabase-js';
-import { SubmissionRecord, AnalyticsSummary, HeatmapDay, StreakStats } from './types';
+import {
+  SubmissionRecord,
+  AnalyticsSummary,
+  HeatmapDay,
+  StreakStats,
+  ParadigmSkill,
+  SpacedReviewItem,
+  FollowUpQuestion
+} from './types';
 
 // Helper to get Supabase client on demand with service role key if available
 function getSupabaseInstance() {
@@ -66,6 +74,18 @@ const INITIAL_SEED_DATA: SubmissionRecord[] = [
                 return [seen[needed], i]
             seen[val] = i
         return []`,
+    follow_up_questions: [
+      {
+        question: 'What if the input array is already sorted? Can we achieve strict O(1) auxiliary space?',
+        category: 'Constraint',
+        answer: 'Yes! Use a Two-Pointer inward scan with left=0 and right=n-1. If nums[left] + nums[right] < target, advance left; if greater, decrement right. This eliminates the hash table, achieving O(N) time with strict O(1) auxiliary space.'
+      },
+      {
+        question: 'What if the dataset contains 10^10 elements and exceeds single-machine RAM?',
+        category: 'Scale',
+        answer: 'Apply distributed range-partitioning or hash-sharding (e.g., Apache Spark). Hash-partition elements into bucket nodes so that any element x and its target - x pair are routed to deterministic paired workers.'
+      }
+    ],
     created_at: new Date(Date.now() - 3 * 86400000).toISOString()
   },
   {
@@ -459,10 +479,106 @@ function extractTopParadigms(submissions: SubmissionRecord[]): Array<{ name: str
     .slice(0, 5);
 }
 
+const INTERVIEW_PARADIGMS = [
+  { name: 'Hash Map & Lookup', category: 'Fundamental', keywords: ['hash', 'lookup', 'map', 'frequency', 'dictionary', 'two sum'] },
+  { name: 'Two Pointers', category: 'Array & String', keywords: ['two-pointer', 'two pointer', 'opposite', 'converging', 'palindrome'] },
+  { name: 'Sliding Window', category: 'Array & String', keywords: ['sliding window', 'window', 'substring without', 'continuous subarray'] },
+  { name: 'Fast & Slow Pointers', category: 'Linked List', keywords: ['tortoise', 'slow', 'cycle', 'floyd', 'middle of linked list'] },
+  { name: 'Monotonic Stack & Queue', category: 'Stack', keywords: ['monotonic', 'next greater', 'daily temperature', 'histogram'] },
+  { name: 'Binary Search & Bounds', category: 'Search', keywords: ['binary search', 'log n', 'bisection', 'sorted array search'] },
+  { name: 'Tree BFS & DFS', category: 'Trees', keywords: ['bfs', 'dfs', 'level order', 'tree', 'traversal', 'depth', 'islands'] },
+  { name: 'Dynamic Programming', category: 'Optimization', keywords: ['dp', 'dynamic programming', 'memoization', 'tabulation', 'subproblem', 'knapsack'] },
+  { name: 'Graph & Disjoint Set', category: 'Graphs', keywords: ['graph', 'dijkstra', 'union-find', 'disjoint', 'topological', 'connected components'] },
+  { name: 'Heap & Priority Queue', category: 'Priority', keywords: ['heap', 'priority queue', 'top k', 'min-heap', 'kth largest'] },
+  { name: 'Backtracking & Subsets', category: 'Combinatorics', keywords: ['backtrack', 'permutation', 'combination', 'subset', 'n-queens'] },
+  { name: 'Linked List Reversal', category: 'Linked List', keywords: ['reverse linked list', 'in-place reversal', 'swap nodes'] },
+  { name: 'Greedy Strategy', category: 'Optimization', keywords: ['greedy', 'interval', 'jump game', 'gas station'] },
+  { name: 'Prefix Sum & Diff', category: 'Array', keywords: ['prefix sum', 'cumulative', 'subarray sum', 'range sum'] }
+];
+
+function computeParadigmMatrix(submissions: SubmissionRecord[]): ParadigmSkill[] {
+  return INTERVIEW_PARADIGMS.map((p) => {
+    const matchingSubs = submissions.filter((sub) => {
+      const corpus = `${sub.problem_title} ${sub.problem_slug} ${sub.user_time_complexity} ${sub.optimal_time_complexity} ${sub.summary_feedback} ${sub.paradigm || ''}`.toLowerCase();
+      return p.keywords.some((kw) => corpus.includes(kw));
+    });
+
+    const solvedCount = matchingSubs.length;
+    const avgScore = solvedCount > 0 
+      ? Math.round(matchingSubs.reduce((acc, s) => acc + (s.overall_score || 0), 0) / solvedCount)
+      : 0;
+
+    const status: 'Ready' | 'Practicing' | 'Blind Spot' = 
+      solvedCount >= 2 && avgScore >= 80 ? 'Ready' :
+      solvedCount >= 1 ? 'Practicing' : 'Blind Spot';
+
+    return {
+      name: p.name,
+      category: p.category,
+      solvedCount,
+      masteryScore: solvedCount > 0 ? avgScore : 0,
+      status
+    };
+  });
+}
+
+function computeSpacedReviewQueue(submissions: SubmissionRecord[]): SpacedReviewItem[] {
+  const seen = new Set<string>();
+  const queue: SpacedReviewItem[] = [];
+
+  submissions.forEach((sub) => {
+    if (seen.has(sub.problem_title)) return;
+    seen.add(sub.problem_title);
+
+    const createdTime = new Date(sub.created_at).getTime();
+    const daysElapsed = Math.max(0, Math.floor((Date.now() - createdTime) / 86400000));
+    
+    const baseDecay = Math.min(95, Math.max(10, daysElapsed * 16));
+    const scoreBonus = sub.overall_score >= 90 ? 15 : 0;
+    const decayPercent = Math.max(5, baseDecay - scoreBonus);
+
+    let urgency: 'Due Today' | 'Upcoming' | 'Mastered' = 'Upcoming';
+    let dueInDays = 3;
+
+    if (decayPercent >= 45 || daysElapsed >= 4) {
+      urgency = 'Due Today';
+      dueInDays = 0;
+    } else if (decayPercent <= 20 && daysElapsed < 2) {
+      urgency = 'Mastered';
+      dueInDays = Math.max(7, 14 - daysElapsed);
+    } else {
+      urgency = 'Upcoming';
+      dueInDays = Math.max(1, 5 - daysElapsed);
+    }
+
+    queue.push({
+      id: sub.id,
+      problemTitle: sub.problem_title,
+      paradigm: sub.user_time_complexity.split('(')[0].trim() || 'Algorithmic Pattern',
+      lastPracticed: new Date(sub.created_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric' }),
+      dueInDays,
+      urgency,
+      decayPercent
+    });
+  });
+
+  return queue.sort((a, b) => b.decayPercent - a.decayPercent).slice(0, 5);
+}
+
+function computeReadinessScore(matrix: ParadigmSkill[]): number {
+  const readyCount = matrix.filter((p) => p.status === 'Ready').length;
+  const practicingCount = matrix.filter((p) => p.status === 'Practicing').length;
+  const raw = (readyCount * 6.5) + (practicingCount * 3.0);
+  return Math.min(100, Math.max(25, Math.round(raw)));
+}
+
 export async function getAnalyticsSummary(userId?: string): Promise<AnalyticsSummary> {
   const subs = await getAllSubmissions(userId);
   const { heatmap, streaks } = computeHeatmapAndStreaks(subs);
   const topParadigms = extractTopParadigms(subs);
+  const paradigmMatrix = computeParadigmMatrix(subs);
+  const spacedReviewQueue = computeSpacedReviewQueue(subs);
+  const readinessScore = computeReadinessScore(paradigmMatrix);
 
   const platformCounts = {
     leetcode: 0,
@@ -493,7 +609,10 @@ export async function getAnalyticsSummary(userId?: string): Promise<AnalyticsSum
       recentTrend: [],
       heatmap,
       streaks,
-      topParadigms
+      topParadigms,
+      readinessScore: 0,
+      paradigmMatrix,
+      spacedReviewQueue: []
     };
   }
 
@@ -531,6 +650,9 @@ export async function getAnalyticsSummary(userId?: string): Promise<AnalyticsSum
     recentTrend,
     heatmap,
     streaks,
-    topParadigms
+    topParadigms,
+    readinessScore,
+    paradigmMatrix,
+    spacedReviewQueue
   };
 }
