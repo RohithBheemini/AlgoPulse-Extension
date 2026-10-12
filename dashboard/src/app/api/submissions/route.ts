@@ -1,142 +1,166 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest } from 'next/server';
 import { getAllSubmissions, insertSubmission } from '@/lib/storage';
-import { getAdminClient } from '@/lib/supabase/admin';
-import { createServerSupabaseClient } from '@/lib/supabase/server';
+import {
+  handleOptionsResponse,
+  jsonResponse,
+  errorResponse,
+  resolveUserFromRequest,
+  generateDefaultFollowUps
+} from '@/lib/api-utils';
 
-// Enable CORS for Chrome Extension requests
 export async function OPTIONS() {
-  return new NextResponse(null, {
-    status: 204,
-    headers: {
-      'Access-Control-Allow-Origin': '*',
-      'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-      'Access-Control-Allow-Headers': 'Content-Type, Authorization'
-    }
-  });
+  return handleOptionsResponse(['GET', 'POST', 'OPTIONS']);
 }
 
 export async function GET(req: NextRequest) {
   try {
-    let userId: string | undefined = req.nextUrl.searchParams.get('userId') || undefined;
+    const { userId } = await resolveUserFromRequest(req);
+    let submissions = await getAllSubmissions(userId);
 
-    // If no userId query param, check if authenticated via Supabase session cookie
-    if (!userId) {
-      try {
-        const supabase = createServerSupabaseClient();
-        const { data: { user } } = await supabase.auth.getUser();
-        if (user) {
-          userId = user.id;
-        }
-      } catch {
-        // Not authenticated via cookies, return public submissions
+    // Filter by platform if specified (e.g., ?platform=leetcode)
+    const platform = req.nextUrl.searchParams.get('platform');
+    if (platform) {
+      const cleanPlatform = platform.toLowerCase().trim();
+      submissions = submissions.filter((s) =>
+        s.platform?.toLowerCase().includes(cleanPlatform)
+      );
+    }
+
+    // Filter by difficulty if specified (e.g., ?difficulty=Medium)
+    const difficulty = req.nextUrl.searchParams.get('difficulty');
+    if (difficulty) {
+      const cleanDiff = difficulty.toLowerCase().trim();
+      submissions = submissions.filter(
+        (s) => s.difficulty?.toLowerCase() === cleanDiff
+      );
+    }
+
+    // Optional limit parameter (e.g., ?limit=10)
+    const limitParam = req.nextUrl.searchParams.get('limit');
+    if (limitParam) {
+      const limit = parseInt(limitParam, 10);
+      if (!isNaN(limit) && limit > 0) {
+        submissions = submissions.slice(0, Math.min(limit, 500));
       }
     }
 
-    const submissions = await getAllSubmissions(userId);
-    return NextResponse.json(submissions, {
-      headers: {
-        'Access-Control-Allow-Origin': '*'
-      }
-    });
+    return jsonResponse(submissions);
   } catch (err: any) {
-    return NextResponse.json(
-      { error: err.message || 'Failed to fetch submissions' },
-      { status: 500, headers: { 'Access-Control-Allow-Origin': '*' } }
-    );
+    console.error('Error fetching submissions:', err);
+    return errorResponse('Failed to fetch submissions', 500);
   }
 }
 
 export async function POST(req: NextRequest) {
   try {
-    const authHeader = req.headers.get('authorization') || '';
-    const token = authHeader.replace(/^Bearer\s+/i, '').trim();
+    const { userId } = await resolveUserFromRequest(req);
 
-    let userId: string | undefined = undefined;
-
-    // 1. Look up user by extension token in Supabase
-    const admin = getAdminClient();
-    if (admin && token) {
-      const { data: profile } = await admin
-        .from('profiles')
-        .select('id')
-        .eq('extension_token', token)
-        .single();
-
-      if (profile) {
-        userId = profile.id;
-      }
-    }
-
-    // 2. Fallback: check if session cookie is present
-    if (!userId) {
-      try {
-        const supabase = createServerSupabaseClient();
-        const { data: { user } } = await supabase.auth.getUser();
-        if (user) {
-          userId = user.id;
-        }
-      } catch {
-        // Ignore
-      }
-    }
-
-    const body = await req.json();
-
-    // 3. Fallback: check if user_id was passed in body
-    if (!userId && body.user_id) {
-      userId = body.user_id;
-    }
-
-    if (!body.problem_title || !body.user_code || body.overall_score === undefined) {
-      return NextResponse.json(
-        { error: 'Missing required fields (problem_title, user_code, overall_score).' },
-        { status: 400, headers: { 'Access-Control-Allow-Origin': '*' } }
+    // Safely parse JSON body
+    let body: any;
+    try {
+      body = await req.json();
+    } catch {
+      return errorResponse(
+        'Invalid JSON payload provided in request body.',
+        400
       );
     }
 
+    if (!body || typeof body !== 'object') {
+      return errorResponse('Request body must be a valid JSON object.', 400);
+    }
+
+    // Validate required fields
+    if (
+      !body.problem_title ||
+      typeof body.problem_title !== 'string' ||
+      body.problem_title.trim().length === 0
+    ) {
+      return errorResponse('Field "problem_title" is required and must be non-empty.', 400);
+    }
+
+    if (
+      !body.user_code ||
+      typeof body.user_code !== 'string' ||
+      body.user_code.trim().length === 0
+    ) {
+      return errorResponse('Field "user_code" is required and must be non-empty.', 400);
+    }
+
+    if (body.overall_score === undefined || isNaN(Number(body.overall_score))) {
+      return errorResponse('Field "overall_score" must be a valid number between 0 and 100.', 400);
+    }
+
+    // Validate and clamp score bounds (0 to 100)
+    const clampScore = (val: any, fallback: number = 0): number => {
+      const num = Number(val);
+      if (isNaN(num)) return fallback;
+      return Math.max(0, Math.min(100, Math.round(num)));
+    };
+
+    const overallScore = clampScore(body.overall_score, 0);
+    const optimalityScore = clampScore(body.optimality_score, 0);
+    const timeScore = clampScore(body.time_score, 0);
+    const spaceScore = clampScore(body.space_score, 0);
+    const cleanlinessScore = clampScore(body.cleanliness_score, 0);
+
+    // Sanitize platform & difficulty
+    const rawPlatform = (body.platform || 'leetcode').toString().toLowerCase().trim();
+    const platform = rawPlatform.slice(0, 50);
+
+    const rawDifficulty = (body.difficulty || 'Medium').toString().trim();
+    const difficulty: 'Easy' | 'Medium' | 'Hard' =
+      ['Easy', 'Medium', 'Hard'].includes(rawDifficulty) ? rawDifficulty as any : 'Medium';
+
+    // Length-guarded strings
+    const problemTitle = body.problem_title.trim().slice(0, 250);
+    const problemSlug = (body.problem_slug || 'problem').toString().trim().slice(0, 150);
+    const language = (body.language || 'python3').toString().trim().slice(0, 50);
+    const userCode = body.user_code.toString().slice(0, 500000); // 500KB cap
+
+    // Senior follow-up questions: use provided array or auto-generate smart defaults
+    let followUpQuestions = Array.isArray(body.follow_up_questions) && body.follow_up_questions.length > 0
+      ? body.follow_up_questions
+      : generateDefaultFollowUps(problemTitle);
+
     const newRecord = await insertSubmission({
-      user_id: userId,
-      problem_title: body.problem_title,
-      problem_slug: body.problem_slug || 'unknown',
-      platform: body.platform || 'leetcode',
-      difficulty: body.difficulty || 'Medium',
-      language: body.language || 'python3',
-      user_code: body.user_code,
-      overall_score: Number(body.overall_score),
-      optimality_score: Number(body.optimality_score || 0),
-      time_score: Number(body.time_score || 0),
-      space_score: Number(body.space_score || 0),
-      cleanliness_score: Number(body.cleanliness_score || 0),
-      user_time_complexity: body.user_time_complexity || 'N/A',
-      user_space_complexity: body.user_space_complexity || 'N/A',
-      optimal_time_complexity: body.optimal_time_complexity || 'N/A',
-      optimal_space_complexity: body.optimal_space_complexity || 'N/A',
-      why_suboptimal: body.why_suboptimal || '',
-      why_ideal: body.why_ideal || '',
-      summary_feedback: body.summary_feedback || '',
-      improvements: Array.isArray(body.improvements) ? body.improvements : [],
-      optimal_code: body.optimal_code || ''
+      user_id: userId || body.user_id || undefined,
+      problem_title: problemTitle,
+      problem_slug: problemSlug,
+      platform,
+      difficulty,
+      language,
+      user_code: userCode,
+      overall_score: overallScore,
+      optimality_score: optimalityScore,
+      time_score: timeScore,
+      space_score: spaceScore,
+      cleanliness_score: cleanlinessScore,
+      user_time_complexity: (body.user_time_complexity || 'N/A').toString().slice(0, 200),
+      user_space_complexity: (body.user_space_complexity || 'N/A').toString().slice(0, 200),
+      optimal_time_complexity: (body.optimal_time_complexity || 'N/A').toString().slice(0, 200),
+      optimal_space_complexity: (body.optimal_space_complexity || 'N/A').toString().slice(0, 200),
+      why_suboptimal: (body.why_suboptimal || '').toString().slice(0, 2000),
+      why_ideal: (body.why_ideal || '').toString().slice(0, 2000),
+      summary_feedback: (body.summary_feedback || '').toString().slice(0, 2000),
+      improvements: Array.isArray(body.improvements)
+        ? body.improvements.slice(0, 10).map((imp: any) => String(imp).slice(0, 300))
+        : [],
+      optimal_code: (body.optimal_code || '').toString().slice(0, 500000),
+      follow_up_questions: followUpQuestions
     });
 
-    return NextResponse.json(
+    return jsonResponse(
       {
         success: true,
         message: 'Submission successfully recorded!',
         submission: newRecord,
         userId: userId || null
       },
-      {
-        status: 201,
-        headers: {
-          'Access-Control-Allow-Origin': '*'
-        }
-      }
+      201
     );
   } catch (err: any) {
     console.error('Error saving submission:', err);
-    return NextResponse.json(
-      { error: err.message || 'Failed to save submission' },
-      { status: 500, headers: { 'Access-Control-Allow-Origin': '*' } }
-    );
+    return errorResponse('Failed to record submission.', 500);
   }
 }

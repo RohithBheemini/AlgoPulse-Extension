@@ -1,33 +1,27 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest } from 'next/server';
 import { getAnalyticsSummary } from '@/lib/storage';
-import { createServerSupabaseClient } from '@/lib/supabase/server';
+import {
+  handleOptionsResponse,
+  jsonResponse,
+  errorResponse,
+  resolveUserFromRequest
+} from '@/lib/api-utils';
+
+export async function OPTIONS() {
+  return handleOptionsResponse(['GET', 'OPTIONS']);
+}
 
 export async function GET(req: NextRequest) {
   try {
-    let userId: string | undefined = req.nextUrl.searchParams.get('userId') || undefined;
-
-    if (!userId) {
-      try {
-        const supabase = createServerSupabaseClient();
-        const { data: { user } } = await supabase.auth.getUser();
-        if (user) {
-          userId = user.id;
-        }
-      } catch {
-        // Not authenticated
-      }
-    }
-
+    const { userId } = await resolveUserFromRequest(req);
     const summary = await getAnalyticsSummary(userId);
-    return NextResponse.json(summary, {
-      headers: {
-        'Access-Control-Allow-Origin': '*'
-      }
-    });
+
+    return jsonResponse(summary);
   } catch (err: any) {
-    return NextResponse.json(
-      { error: err.message || 'Failed to fetch analytics' },
-      { status: 500, headers: { 'Access-Control-Allow-Origin': '*' } }
+    console.error('Analytics endpoint error:', err);
+    return errorResponse(
+      'Failed to compute analytics summary. Please try again.',
+      500
     );
   }
 }

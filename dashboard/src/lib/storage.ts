@@ -345,6 +345,41 @@ export async function insertSubmission(
   return newRecord;
 }
 
+export async function deleteSubmission(id: string): Promise<boolean> {
+  let found = false;
+
+  // 1. Delete from local JSON file
+  try {
+    const existing = readLocalSubmissions();
+    const filtered = existing.filter((s) => s.id !== id);
+    if (filtered.length !== existing.length) {
+      found = true;
+      writeLocalSubmissions(filtered);
+    }
+  } catch (err) {
+    console.warn('Failed to delete from local file:', err);
+  }
+
+  // 2. Delete from Supabase if configured
+  const supabase = getSupabaseInstance();
+  if (supabase) {
+    try {
+      const { error } = await supabase
+        .from('submissions')
+        .delete()
+        .eq('id', id);
+
+      if (!error) {
+        found = true;
+      }
+    } catch (err) {
+      console.warn('Supabase delete error:', err);
+    }
+  }
+
+  return found;
+}
+
 function computeHeatmapAndStreaks(submissions: SubmissionRecord[]): {
   heatmap: HeatmapDay[];
   streaks: StreakStats;
