@@ -1,5 +1,5 @@
 import { NextRequest } from 'next/server';
-import { getAllSubmissions, insertSubmission } from '@/lib/storage';
+import { getAllSubmissions, insertSubmission, INTERVIEW_PARADIGMS } from '@/lib/storage';
 import {
   handleOptionsResponse,
   jsonResponse,
@@ -71,6 +71,16 @@ export async function POST(req: NextRequest) {
       return errorResponse('Request body must be a valid JSON object.', 400);
     }
 
+    // Resolve target user ID from auth resolution or explicit body fields
+    let targetUserId = userId;
+    if (!targetUserId && body) {
+      if (body.user_id && typeof body.user_id === 'string' && body.user_id.trim().length > 0) {
+        targetUserId = body.user_id.trim();
+      } else if (body.userId && typeof body.userId === 'string' && body.userId.trim().length > 0) {
+        targetUserId = body.userId.trim();
+      }
+    }
+
     // Validate required fields
     if (
       !body.problem_title ||
@@ -130,8 +140,18 @@ export async function POST(req: NextRequest) {
       ? body.follow_up_questions
       : generateDefaultFollowUps(problemTitle);
 
+    // Detect or validate paradigm
+    let paradigm = body.paradigm ? String(body.paradigm).trim().slice(0, 100) : undefined;
+    if (!paradigm) {
+      const corpus = `${problemTitle} ${problemSlug} ${body.user_time_complexity || ''} ${body.optimal_time_complexity || ''} ${body.summary_feedback || ''}`.toLowerCase();
+      const detected = INTERVIEW_PARADIGMS.find((p) => p.keywords.some((kw) => corpus.includes(kw)));
+      if (detected) {
+        paradigm = detected.name;
+      }
+    }
+
     const newRecord = await insertSubmission({
-      user_id: userId || body.user_id || undefined,
+      user_id: targetUserId || undefined,
       problem_title: problemTitle,
       problem_slug: problemSlug,
       platform,
@@ -154,6 +174,7 @@ export async function POST(req: NextRequest) {
         ? body.improvements.slice(0, 10).map((imp: any) => String(imp).slice(0, 300))
         : [],
       optimal_code: (body.optimal_code || '').toString().slice(0, 500000),
+      paradigm: paradigm,
       follow_up_questions: followUpQuestions
     });
 
@@ -162,7 +183,7 @@ export async function POST(req: NextRequest) {
         success: true,
         message: 'Submission successfully recorded!',
         submission: newRecord,
-        userId: userId || null
+        userId: targetUserId || null
       },
       201
     );

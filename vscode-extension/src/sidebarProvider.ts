@@ -205,7 +205,8 @@ export class AlgoPulseSidebarProvider implements vscode.WebviewViewProvider {
           why_ideal: result.why_ideal || result.best_approach.explanation,
           summary_feedback: result.best_approach.explanation,
           improvements: result.improvements || [],
-          optimal_code: result.optimal_code
+          optimal_code: result.optimal_code,
+          paradigm: result.user_approach?.paradigm || result.best_approach?.paradigm || undefined
         };
 
         const syncResp = await syncSubmissionToDashboard(payload, dashboardUrl, extensionToken);

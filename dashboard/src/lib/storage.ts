@@ -59,36 +59,50 @@ function writeLocalSubmissions(data: SubmissionRecord[]): void {
 }
 
 export async function getAllSubmissions(userId?: string): Promise<SubmissionRecord[]> {
+  if (!userId) {
+    // If not logged in, return an empty array — never expose other users' private submissions
+    return [];
+  }
+
+  const results: SubmissionRecord[] = [];
+  const seenIds = new Set<string>();
+
   const supabase = getSupabaseInstance();
   if (supabase) {
     try {
-      if (userId) {
-        // Query user-specific submissions strictly
-        const { data: userRecords, error: userError } = await supabase
-          .from('submissions')
-          .select('*')
-          .eq('user_id', userId)
-          .order('created_at', { ascending: false });
+      // Query user-specific submissions strictly
+      const { data: userRecords, error: userError } = await supabase
+        .from('submissions')
+        .select('*')
+        .eq('user_id', userId)
+        .order('created_at', { ascending: false });
 
-        if (!userError && userRecords) {
-          return userRecords as SubmissionRecord[];
-        }
-        return [];
-      } else {
-        // If not logged in, return an empty array — never expose other users' private submissions
-        return [];
+      if (!userError && userRecords && userRecords.length > 0) {
+        userRecords.forEach((r: any) => {
+          results.push(r as SubmissionRecord);
+          seenIds.add(r.id);
+        });
       }
     } catch (err) {
       console.warn('Supabase fetch failed, falling back to local storage:', err);
     }
   }
 
-  // Fallback to local storage strictly filtered by user
-  const local = readLocalSubmissions();
-  if (userId) {
-    return local.filter((s) => s.user_id === userId);
+  // Also include local storage submissions strictly filtered by user_id
+  try {
+    const local = readLocalSubmissions();
+    const userLocal = local.filter((s) => s.user_id === userId);
+    userLocal.forEach((s) => {
+      if (!seenIds.has(s.id)) {
+        results.push(s);
+        seenIds.add(s.id);
+      }
+    });
+  } catch (err) {
+    console.warn('Local storage read failed:', err);
   }
-  return [];
+
+  return results.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
 }
 
 export async function getSubmissionById(id: string): Promise<SubmissionRecord | null> {
@@ -289,40 +303,7 @@ function computeHeatmapAndStreaks(submissions: SubmissionRecord[]): {
   };
 }
 
-function extractTopParadigms(submissions: SubmissionRecord[]): Array<{ name: string; count: number }> {
-  const paradigmMap: Record<string, number> = {};
-
-  const commonParadigms = [
-    'Hash Map',
-    'Two Pointers',
-    'Sliding Window',
-    'Dynamic Programming',
-    'Binary Search',
-    'Greedy',
-    'Breadth-First Search',
-    'Depth-First Search',
-    'Prefix Sum',
-    'Monotonic Stack',
-    'Bit Manipulation',
-    'Recursion'
-  ];
-
-  submissions.forEach((sub) => {
-    const text = `${sub.user_time_complexity} ${sub.optimal_time_complexity} ${sub.why_suboptimal} ${sub.summary_feedback}`;
-    commonParadigms.forEach((p) => {
-      if (new RegExp(p, 'i').test(text)) {
-        paradigmMap[p] = (paradigmMap[p] || 0) + 1;
-      }
-    });
-  });
-
-  return Object.entries(paradigmMap)
-    .map(([name, count]) => ({ name, count }))
-    .sort((a, b) => b.count - a.count)
-    .slice(0, 5);
-}
-
-const INTERVIEW_PARADIGMS = [
+export const INTERVIEW_PARADIGMS = [
   { name: 'Hash Map & Lookup', category: 'Fundamental', keywords: ['hash', 'lookup', 'map', 'frequency', 'dictionary', 'two sum'] },
   { name: 'Two Pointers', category: 'Array & String', keywords: ['two-pointer', 'two pointer', 'opposite', 'converging', 'palindrome'] },
   { name: 'Sliding Window', category: 'Array & String', keywords: ['sliding window', 'window', 'substring without', 'continuous subarray'] },
@@ -339,9 +320,35 @@ const INTERVIEW_PARADIGMS = [
   { name: 'Prefix Sum & Diff', category: 'Array', keywords: ['prefix sum', 'cumulative', 'subarray sum', 'range sum'] }
 ];
 
+function extractTopParadigms(submissions: SubmissionRecord[]): Array<{ name: string; count: number }> {
+  const paradigmMap: Record<string, number> = {};
+
+  INTERVIEW_PARADIGMS.forEach((p) => {
+    const matchingSubs = submissions.filter((sub) => {
+      if (sub.paradigm && sub.paradigm.toLowerCase().includes(p.name.toLowerCase())) {
+        return true;
+      }
+      const corpus = `${sub.problem_title} ${sub.problem_slug} ${sub.user_time_complexity} ${sub.optimal_time_complexity} ${sub.summary_feedback} ${sub.paradigm || ''}`.toLowerCase();
+      return p.keywords.some((kw) => corpus.includes(kw));
+    });
+
+    if (matchingSubs.length > 0) {
+      paradigmMap[p.name] = matchingSubs.length;
+    }
+  });
+
+  return Object.entries(paradigmMap)
+    .map(([name, count]) => ({ name, count }))
+    .sort((a, b) => b.count - a.count)
+    .slice(0, 5);
+}
+
 function computeParadigmMatrix(submissions: SubmissionRecord[]): ParadigmSkill[] {
   return INTERVIEW_PARADIGMS.map((p) => {
     const matchingSubs = submissions.filter((sub) => {
+      if (sub.paradigm && sub.paradigm.toLowerCase().includes(p.name.toLowerCase())) {
+        return true;
+      }
       const corpus = `${sub.problem_title} ${sub.problem_slug} ${sub.user_time_complexity} ${sub.optimal_time_complexity} ${sub.summary_feedback} ${sub.paradigm || ''}`.toLowerCase();
       return p.keywords.some((kw) => corpus.includes(kw));
     });

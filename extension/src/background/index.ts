@@ -165,7 +165,8 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
           why_ideal: analysis.why_ideal || analysis.best_approach.explanation,
           summary_feedback: analysis.best_approach.explanation,
           improvements: analysis.improvements,
-          optimal_code: analysis.optimal_code
+          optimal_code: analysis.optimal_code,
+          paradigm: analysis.user_approach?.paradigm || analysis.best_approach?.paradigm || undefined
         };
 
         let syncStatus = { synced: false, message: 'Auto-sync disabled' };

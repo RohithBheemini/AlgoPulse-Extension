@@ -57,7 +57,8 @@ export async function GET(req: NextRequest) {
           profile: profile || {
             id: user.id,
             email: user.email,
-            extension_token: 'ap_sec_default'
+            display_name: user.email?.split('@')[0] || 'Developer',
+            extension_token: `ap_sec_${user.id.replace(/-/g, '').substring(0, 16)}`
           }
         });
       }

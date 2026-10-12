@@ -59,10 +59,10 @@ export function errorResponse(
 export async function resolveUserFromRequest(
   req: NextRequest
 ): Promise<{ userId?: string; userEmail?: string; authMethod: 'bearer' | 'session' | 'query' | 'anonymous' }> {
-  // 1. Check Bearer token in Authorization header
+  // 1. Check Bearer token in Authorization header, x-extension-token, or ?token=
   const authHeader = req.headers.get('authorization') || '';
   const tokenMatch = authHeader.match(/^Bearer\s+(.+)$/i);
-  const token = tokenMatch ? tokenMatch[1].trim() : '';
+  const token = (tokenMatch ? tokenMatch[1].trim() : (req.headers.get('x-extension-token') || req.nextUrl.searchParams.get('token') || '')).trim();
 
   if (token) {
     try {
@@ -76,6 +76,18 @@ export async function resolveUserFromRequest(
 
         if (profile?.id) {
           return { userId: profile.id, userEmail: profile.email, authMethod: 'bearer' };
+        }
+
+        // Support user-derived deterministic token: ap_sec_<hex> matching user ID prefix
+        if (token.startsWith('ap_sec_')) {
+          const hex = token.slice(7);
+          const { data: allProfiles } = await admin
+            .from('profiles')
+            .select('id, email');
+          const matched = allProfiles?.find((p) => p.id.replace(/-/g, '').startsWith(hex));
+          if (matched?.id) {
+            return { userId: matched.id, userEmail: matched.email, authMethod: 'bearer' };
+          }
         }
       }
     } catch {

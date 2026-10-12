@@ -71,6 +71,7 @@ export interface SyncSubmissionPayload {
   summary_feedback: string;
   improvements: string[];
   optimal_code: string;
+  paradigm?: string;
 }
 
 export interface SubmissionHistoryItem extends SyncSubmissionPayload {

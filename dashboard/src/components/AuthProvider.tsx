@@ -34,7 +34,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const supabase = createClient();
 
-  const fetchProfile = async (userId: string) => {
+  const fetchProfile = async (userId: string, userEmail?: string) => {
     try {
       const { data, error } = await supabase
         .from('profiles')
@@ -44,7 +44,35 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       if (!error && data) {
         setProfile(data as UserProfile);
+        return;
       }
+
+      // If profile does not exist yet (e.g. trigger was not configured), auto-provision it
+      const defaultToken = `ap_sec_${userId.replace(/-/g, '').substring(0, 16)}`;
+      const email = userEmail || user?.email || '';
+      const initialProfile: UserProfile = {
+        id: userId,
+        email: email,
+        display_name: email.split('@')[0] || 'Developer',
+        extension_token: defaultToken
+      };
+
+      try {
+        const { data: inserted, error: insertErr } = await supabase
+          .from('profiles')
+          .upsert([initialProfile])
+          .select()
+          .single();
+
+        if (!insertErr && inserted) {
+          setProfile(inserted as UserProfile);
+          return;
+        }
+      } catch {
+        // Fallback if client upsert is restricted by RLS
+      }
+
+      setProfile(initialProfile);
     } catch (err) {
       console.warn('Could not load profile:', err);
     }
@@ -52,7 +80,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const refreshProfile = async () => {
     if (user?.id) {
-      await fetchProfile(user.id);
+      await fetchProfile(user.id, user.email);
     }
   };
 
@@ -65,7 +93,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         if (mounted) {
           setUser(session?.user || null);
           if (session?.user?.id) {
-            await fetchProfile(session.user.id);
+            await fetchProfile(session.user.id, session.user.email);
           }
         }
       } catch (err) {
@@ -80,7 +108,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         if (!mounted) return;
         setUser(session?.user || null);
         if (session?.user?.id) {
-          await fetchProfile(session.user.id);
+          await fetchProfile(session.user.id, session.user.email);
         } else {
           setProfile(null);
         }
