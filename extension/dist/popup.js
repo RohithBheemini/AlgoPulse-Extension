@@ -180,3 +180,4 @@ lucide-react/dist/esm/lucide-react.js:
    * See the LICENSE file in the root directory of this source tree.
    *)
 */
+//# sourceMappingURL=popup.js.map

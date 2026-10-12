@@ -3,21 +3,25 @@ import { createRoot } from 'react-dom/client';
 import { AlgoPulseOverlay } from './overlay';
 
 function initAlgoPulse() {
-  // Prevent duplicate mounts
-  if (document.getElementById('algopulse-overlay-root')) {
+  // Prevent duplicate mounts or mounting before body is ready
+  if (!document.body || document.getElementById('algopulse-overlay-root')) {
     return;
   }
 
-  // Create mount container
-  const container = document.createElement('div');
-  container.id = 'algopulse-overlay-root';
-  container.className = 'dark algopulse-root';
-  document.body.appendChild(container);
+  try {
+    // Create mount container
+    const container = document.createElement('div');
+    container.id = 'algopulse-overlay-root';
+    container.className = 'dark algopulse-root';
+    document.body.appendChild(container);
 
-  const root = createRoot(container);
-  root.render(<AlgoPulseOverlay />);
+    const root = createRoot(container);
+    root.render(<AlgoPulseOverlay />);
 
-  console.log('[AlgoPulse] In-page review overlay mounted.');
+    console.log('[AlgoPulse] In-page review overlay mounted.');
+  } catch (err) {
+    console.warn('[AlgoPulse] Failed to mount overlay:', err);
+  }
 }
 
 // Ensure DOM is ready

@@ -73,7 +73,7 @@ async function build() {
   const commonOptions = {
     bundle: true,
     minify: !isWatch,
-    sourcemap: isWatch ? 'inline' : false,
+    sourcemap: true,
     target: ['chrome110'],
     define: {
       'process.env.NODE_ENV': isWatch ? '"development"' : '"production"'

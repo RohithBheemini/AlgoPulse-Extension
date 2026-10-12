@@ -196,10 +196,10 @@ export function extractProblemDifficulty(): 'Easy' | 'Medium' | 'Hard' | 'Unknow
   if (medEl && /medium/i.test(medEl.textContent || '')) return 'Medium';
   if (hardEl && /hard/i.test(hardEl.textContent || '')) return 'Hard';
 
-  const bodyText = document.body.innerText;
-  if (/\b(Basic|School|Easy)\b/i.test(bodyText)) return 'Easy';
-  if (/\bMedium\b/i.test(bodyText)) return 'Medium';
-  if (/\bHard\b/i.test(bodyText)) return 'Hard';
+  const bodyText = document.body ? document.body.innerText : '';
+  if (bodyText && /\b(Basic|School|Easy)\b/i.test(bodyText)) return 'Easy';
+  if (bodyText && /\bMedium\b/i.test(bodyText)) return 'Medium';
+  if (bodyText && /\bHard\b/i.test(bodyText)) return 'Hard';
 
   return 'Medium';
 }

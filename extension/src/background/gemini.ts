@@ -236,31 +236,40 @@ Evaluate the student's solution focusing on their algorithmic approach and outpu
     parsed = JSON.parse(cleaned);
   }
 
-  // Ensure approach-first normalization & aliases
-  if (!parsed.scoring_breakdown) {
+  // 1. Ensure score is a valid number
+  parsed.score = typeof parsed.score === 'number' && !isNaN(parsed.score) ? Math.min(100, Math.max(0, Math.round(parsed.score))) : 70;
+
+  // 2. Ensure scoring_breakdown is an object with valid numbers
+  if (!parsed.scoring_breakdown || typeof parsed.scoring_breakdown !== 'object') {
     parsed.scoring_breakdown = {};
   }
   const sb = parsed.scoring_breakdown;
-  sb.approach_soundness = sb.approach_soundness ?? sb.optimality ?? 30;
+  sb.approach_soundness = typeof sb.approach_soundness === 'number' ? sb.approach_soundness : (typeof sb.optimality === 'number' ? sb.optimality : 28);
   sb.optimality = sb.approach_soundness;
-  sb.approach_optimality = sb.approach_optimality ?? sb.time_complexity ?? 20;
+  sb.approach_optimality = typeof sb.approach_optimality === 'number' ? sb.approach_optimality : (typeof sb.time_complexity === 'number' ? sb.time_complexity : 20);
   sb.time_complexity = sb.approach_optimality;
-  sb.space_complexity = sb.space_complexity ?? 18;
-  sb.cleanliness = sb.cleanliness ?? 18;
+  sb.space_complexity = typeof sb.space_complexity === 'number' ? sb.space_complexity : 18;
+  sb.cleanliness = typeof sb.cleanliness === 'number' ? sb.cleanliness : 18;
 
-  if (!parsed.user_approach) {
+  // 3. Ensure user_approach is fully formed
+  if (!parsed.user_approach || typeof parsed.user_approach !== 'object') {
     parsed.user_approach = {
-      name: 'Standard Approach',
+      name: 'Submitted Approach',
       paradigm: 'General',
       summary: 'Student submitted approach',
       time_complexity: 'O(N)',
       space_complexity: 'O(1)'
     };
-  } else if (!parsed.user_approach.name) {
-    parsed.user_approach.name = parsed.user_approach.paradigm || 'Submitted Approach';
+  } else {
+    parsed.user_approach.name = parsed.user_approach.name || parsed.user_approach.paradigm || 'Submitted Approach';
+    parsed.user_approach.paradigm = parsed.user_approach.paradigm || 'General';
+    parsed.user_approach.time_complexity = parsed.user_approach.time_complexity || 'O(N)';
+    parsed.user_approach.space_complexity = parsed.user_approach.space_complexity || 'O(1)';
+    parsed.user_approach.summary = parsed.user_approach.summary || '';
   }
 
-  if (!parsed.best_approach) {
+  // 4. Ensure best_approach is fully formed
+  if (!parsed.best_approach || typeof parsed.best_approach !== 'object') {
     parsed.best_approach = {
       name: 'Optimal Paradigm',
       paradigm: 'Optimal',
@@ -269,9 +278,40 @@ Evaluate the student's solution focusing on their algorithmic approach and outpu
       space_complexity: 'O(1)',
       explanation: 'Optimal time and space complexity strategy.'
     };
-  } else if (!parsed.best_approach.name) {
-    parsed.best_approach.name = parsed.best_approach.paradigm || 'Optimal Approach';
+  } else {
+    parsed.best_approach.name = parsed.best_approach.name || parsed.best_approach.paradigm || 'Optimal Approach';
+    parsed.best_approach.paradigm = parsed.best_approach.paradigm || 'Optimal';
+    parsed.best_approach.time_complexity = parsed.best_approach.time_complexity || 'O(N)';
+    parsed.best_approach.space_complexity = parsed.best_approach.space_complexity || 'O(1)';
+    parsed.best_approach.explanation = parsed.best_approach.explanation || parsed.best_approach.summary || 'Optimal time and space complexity strategy.';
   }
+
+  // 5. Ensure hints is ALWAYS an array of 3 strings
+  if (Array.isArray(parsed.hints)) {
+    parsed.hints = parsed.hints.map((h: any) => (typeof h === 'string' ? h : (h?.hint || h?.text || String(h))));
+    while (parsed.hints.length < 3) {
+      parsed.hints.push('Analyze the problem constraints and invariants for potential optimizations.');
+    }
+  } else if (parsed.hints && typeof parsed.hints === 'object') {
+    parsed.hints = Object.values(parsed.hints).map((h: any) => (typeof h === 'string' ? h : String(h)));
+    while (parsed.hints.length < 3) {
+      parsed.hints.push('Analyze the problem constraints and invariants for potential optimizations.');
+    }
+  } else {
+    parsed.hints = [
+      'Observe the input bounds and whether elements can be pre-sorted or hashed.',
+      'Consider using an auxiliary hash map or two-pointer scan to avoid nested loops.',
+      'Maintain running state in a single pass to achieve linear time complexity.'
+    ];
+  }
+
+  // 6. Ensure improvements is an array of strings
+  if (!Array.isArray(parsed.improvements)) {
+    parsed.improvements = parsed.improvements ? [String(parsed.improvements)] : [];
+  }
+
+  // 7. Ensure optimal_code is a string
+  parsed.optimal_code = typeof parsed.optimal_code === 'string' ? parsed.optimal_code : '';
 
   return parsed as AIAnalysisResult;
 }
