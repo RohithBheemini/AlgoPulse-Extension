@@ -1,53 +1,90 @@
 import { ProblemMetadata, AIAnalysisResult } from './types';
 
-async function resolveBestModel(apiKey: string, preferredModel = 'gemini-3.8-flash'): Promise<string[]> {
-  const fallbackCandidates = [
-    'gemini-3.8-flash',
-    'gemini-2.0-flash',
-    'gemini-1.5-flash',
-    'gemini-1.5-flash-latest'
-  ];
+let cachedWorkingModel: string | null = null;
 
-  if (preferredModel && preferredModel !== 'auto' && fallbackCandidates.includes(preferredModel)) {
-    // Put preferred at the front
-    return [preferredModel, ...fallbackCandidates.filter((m) => m !== preferredModel)];
-  }
-
+// Dynamically query all supported generateContent models for this specific API key via Google's ModelService.ListModels
+export async function listAvailableModels(apiKey: string): Promise<string[]> {
   try {
     const listUrl = `https://generativelanguage.googleapis.com/v1beta/models?key=${encodeURIComponent(apiKey.trim())}`;
     const res = await fetch(listUrl);
     if (res.ok) {
       const data: any = await res.json();
-      const available: string[] = (data.models || [])
-        .filter((m: any) => m.supportedGenerationMethods?.includes('generateContent'))
-        .map((m: any) => m.name.replace(/^models\//, ''));
+      const models: any[] = data.models || [];
+      const generateModels = models
+        .filter((m) => Array.isArray(m.supportedGenerationMethods) && m.supportedGenerationMethods.includes('generateContent'))
+        .map((m) => m.name.replace(/^models\//, ''))
+        .filter((name) => !name.includes('embedding') && !name.includes('aqa') && !name.includes('imagen'));
 
-      if (available.length > 0) {
-        const sorted = [...available].sort((a, b) => {
-          if (a.includes('3.8-flash')) return -1;
-          if (b.includes('3.8-flash')) return 1;
-          if (a.includes('2.0-flash')) return -1;
-          if (b.includes('2.0-flash')) return 1;
-          if (a.includes('1.5-flash')) return -1;
-          if (b.includes('1.5-flash')) return 1;
-          if (a.includes('flash') && !b.includes('flash')) return -1;
-          if (!a.includes('flash') && b.includes('flash')) return 1;
-          return 0;
-        });
-        return sorted;
+      if (generateModels.length > 0) {
+        console.log('[AlgoPulse VSCode] Discovered models supporting generateContent from Google:', generateModels);
+        return generateModels;
       }
+    } else {
+      console.warn('[AlgoPulse VSCode] ModelService.ListModels returned HTTP', res.status);
     }
   } catch (err) {
-    console.warn('[AlgoPulse VSCode] Model query fallback:', err);
+    console.warn('[AlgoPulse VSCode] Error querying ModelService.ListModels:', err);
+  }
+  return [];
+}
+
+async function resolveBestModel(apiKey: string, preferredModel = 'auto'): Promise<string[]> {
+  const cleanPreferred = (preferredModel && preferredModel !== 'auto' && preferredModel.trim().length > 0)
+    ? preferredModel.trim()
+    : null;
+
+  // Real, verified fallback models if ListModels is unreachable
+  const safeFallbacks = [
+    'gemini-1.5-flash',
+    'gemini-2.0-flash',
+    'gemini-2.5-flash',
+    'gemini-1.5-pro',
+    'gemini-pro'
+  ];
+
+  // 1. Live discovery via Google's ModelService.ListModels
+  const liveModels = await listAvailableModels(apiKey);
+  const pool = liveModels.length > 0 ? liveModels : safeFallbacks;
+
+  // 2. Flexible sorting: prioritize fast Flash models, user's preference, or cached working model
+  const sorted = [...pool].sort((a, b) => {
+    // If user specified a preferred model, put it first
+    if (cleanPreferred) {
+      if (a.toLowerCase() === cleanPreferred.toLowerCase()) return -1;
+      if (b.toLowerCase() === cleanPreferred.toLowerCase()) return 1;
+    }
+    // If a model worked previously in this session, prioritize it
+    if (cachedWorkingModel) {
+      if (a === cachedWorkingModel) return -1;
+      if (b === cachedWorkingModel) return 1;
+    }
+    // Prioritize fast/free flash models
+    const aFlash = a.includes('flash');
+    const bFlash = b.includes('flash');
+    if (aFlash && !bFlash) return -1;
+    if (!aFlash && bFlash) return 1;
+
+    // Prioritize 2.0 or 1.5 over older
+    if (a.includes('2.0') && !b.includes('2.0')) return -1;
+    if (!a.includes('2.0') && b.includes('2.0')) return 1;
+    if (a.includes('1.5') && !b.includes('1.5')) return -1;
+    if (!a.includes('1.5') && b.includes('1.5')) return 1;
+
+    return b.localeCompare(a, undefined, { numeric: true });
+  });
+
+  // If user typed a custom model name not found in pool, prepend it so it gets attempted first
+  if (cleanPreferred && !sorted.includes(cleanPreferred)) {
+    return [cleanPreferred, ...sorted];
   }
 
-  return fallbackCandidates;
+  return sorted;
 }
 
 export async function analyzeCodeWithGemini(
   metadata: ProblemMetadata,
   apiKey: string,
-  preferredModel = 'gemini-3.8-flash'
+  preferredModel = 'auto'
 ): Promise<AIAnalysisResult> {
   if (!apiKey || apiKey.trim() === '') {
     throw new Error('Gemini API key is not configured. Please open AlgoPulse settings in VS Code and set your free API key.');
@@ -184,6 +221,8 @@ Evaluate this code now. Focus on ALGORITHMIC APPROACH first, followed by complex
         parsed.scoring_breakdown.time_complexity = parsed.scoring_breakdown.approach_optimality || 20;
       }
 
+      cachedWorkingModel = model;
+      console.log(`[AlgoPulse VSCode] Evaluated successfully using model: ${model}`);
       parsed.model_used = model;
       return parsed;
     } catch (err: any) {
@@ -192,5 +231,5 @@ Evaluate this code now. Focus on ALGORITHMIC APPROACH first, followed by complex
     }
   }
 
-  throw lastError || new Error('Failed to analyze code with all available Gemini models.');
+  throw lastError || new Error(`AlgoPulse: Failed to analyze code across attempted Gemini models [${candidateModels.slice(0, 4).join(', ')}]. Please check your API key.`);
 }

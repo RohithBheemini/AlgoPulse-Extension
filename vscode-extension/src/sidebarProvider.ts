@@ -72,6 +72,9 @@ export class AlgoPulseSidebarProvider implements vscode.WebviewViewProvider {
           if (data.settings.extensionToken !== undefined) {
             await config.update('extensionToken', data.settings.extensionToken, vscode.ConfigurationTarget.Global);
           }
+          if (data.settings.preferredModel !== undefined) {
+            await config.update('preferredModel', data.settings.preferredModel || 'auto', vscode.ConfigurationTarget.Global);
+          }
           vscode.window.showInformationMessage('AlgoPulse settings saved successfully!');
           this.postMessage({ type: 'SETTINGS_SAVED' });
           break;
@@ -85,7 +88,7 @@ export class AlgoPulseSidebarProvider implements vscode.WebviewViewProvider {
               dashboardUrl: config.get<string>('dashboardUrl') || 'http://localhost:3000',
               extensionToken: config.get<string>('extensionToken') || '',
               autoSync: config.get<boolean>('autoSync') !== false,
-              preferredModel: config.get<string>('preferredModel') || 'gemini-3.8-flash'
+              preferredModel: config.get<string>('preferredModel') || 'auto'
             }
           });
           break;
@@ -143,7 +146,7 @@ export class AlgoPulseSidebarProvider implements vscode.WebviewViewProvider {
     const dashboardUrl = config.get<string>('dashboardUrl') || 'http://localhost:3000';
     const extensionToken = config.get<string>('extensionToken') || '';
     const autoSync = config.get<boolean>('autoSync') !== false;
-    const preferredModel = config.get<string>('preferredModel') || 'gemini-3.8-flash';
+    const preferredModel = config.get<string>('preferredModel') || 'auto';
 
     if (!apiKey || apiKey.trim() === '') {
       this.postMessage({
@@ -501,6 +504,10 @@ export class AlgoPulseSidebarProvider implements vscode.WebviewViewProvider {
       <label class="input-label">Extension Token (from Profile)</label>
       <input type="password" id="tokenInput" class="input-field" placeholder="ap_sec_..." />
     </div>
+    <div class="input-group">
+      <label class="input-label">Gemini Model (Default: auto)</label>
+      <input type="text" id="modelInput" class="input-field" placeholder="auto (or gemini-1.5-flash, gemini-2.0-flash)" />
+    </div>
     <button id="saveSettingsBtn" class="btn" style="margin-top: 4px;">Save Configuration</button>
   </div>
 
@@ -680,9 +687,10 @@ export class AlgoPulseSidebarProvider implements vscode.WebviewViewProvider {
       const geminiApiKey = document.getElementById('apiKeyInput').value;
       const dashboardUrl = document.getElementById('dashboardUrlInput').value;
       const extensionToken = document.getElementById('tokenInput').value;
+      const preferredModel = document.getElementById('modelInput').value || 'auto';
       vscode.postMessage({
         type: 'SAVE_SETTINGS',
-        settings: { geminiApiKey, dashboardUrl, extensionToken }
+        settings: { geminiApiKey, dashboardUrl, extensionToken, preferredModel }
       });
       settingsDrawer.style.display = 'none';
     });
@@ -716,6 +724,7 @@ export class AlgoPulseSidebarProvider implements vscode.WebviewViewProvider {
             document.getElementById('apiKeyInput').value = message.config.geminiApiKey || '';
             document.getElementById('dashboardUrlInput').value = message.config.dashboardUrl || 'http://localhost:3000';
             document.getElementById('tokenInput').value = message.config.extensionToken || '';
+            document.getElementById('modelInput').value = message.config.preferredModel || 'auto';
           }
           break;
         }

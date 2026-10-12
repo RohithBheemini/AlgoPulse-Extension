@@ -1,1 +1,125 @@
-[]
+[
+  {
+    "user_id": "7d05da29-6865-4b89-9409-958add33ab61",
+    "problem_title": "Palindrome Number",
+    "problem_slug": "palindrome-number",
+    "platform": "leetcode",
+    "difficulty": "Medium",
+    "language": "python3",
+    "user_code": "class Solution:\n    def isPalindrome(self, x: int) -> bool:\n        ",
+    "overall_score": 0,
+    "optimality_score": 0,
+    "time_score": 0,
+    "space_score": 0,
+    "cleanliness_score": 0,
+    "user_time_complexity": "No Implementation (N/A)",
+    "user_space_complexity": "N/A",
+    "optimal_time_complexity": "Revert Half of the Number (O(log10(n)))",
+    "optimal_space_complexity": "O(1)",
+    "why_suboptimal": "No implementation was provided. A naive approach would convert the number to a string and check if it equals its reverse, which allocates extra O(log10(n)) memory and violates the follow-up constraint.",
+    "why_ideal": "Reverting only the second half mathematically processes digits in-place using O(1) extra space and terminates in logarithmic time proportional to half the number of digits, completely avoiding string allocation and overflow risks.",
+    "summary_feedback": "Reversing only half the integer avoids potential 32-bit integer overflow issues in languages with fixed-width integers, cuts the number of loop iterations in half, and avoids converting the integer to a string, satisfying the follow-up constraint with strictly O(1) auxiliary space.",
+    "improvements": [
+      "Handle non-positive edge cases immediately: negative numbers are never palindromes, and non-zero numbers ending with 0 cannot be palindromes.",
+      "Use modulo (% 10) and integer division (// 10) to accumulate the reversed half of the number until `x <= reverted_number`."
+    ],
+    "optimal_code": "class Solution:\n    def isPalindrome(self, x: int) -> bool:\n        # Negative numbers cannot be palindromes.\n        # Numbers ending in 0 (except 0 itself) cannot be palindromes.\n        if x < 0 or (x % 10 == 0 and x != 0):\n            return False\n        \n        reverted_number = 0\n        while x > reverted_number:\n            reverted_number = reverted_number * 10 + x % 10\n            x //= 10\n            \n        # For even digit lengths: x == reverted_number\n        # For odd digit lengths: x == reverted_number // 10 (discards middle digit)\n        return x == reverted_number or x == reverted_number // 10",
+    "paradigm": "None",
+    "follow_up_questions": [
+      {
+        "question": "How does your solution scale if the dataset size increases from N = 10^5 to N = 10^9?",
+        "category": "Scale",
+        "answer": "Analyze memory bounds. If N exceeds RAM, replace in-memory structures with disk-backed external merge-sort or chunked map-reduce streams."
+      },
+      {
+        "question": "Can you solve this with strict O(1) auxiliary memory without modifying the input array?",
+        "category": "Constraint",
+        "answer": "Examine mathematical invariants, bit manipulation, or two-pointer cycles to eliminate auxiliary dynamic allocations."
+      }
+    ],
+    "id": "sub_1791823549710_i8757",
+    "created_at": "2026-10-12T16:45:49.710Z"
+  },
+  {
+    "user_id": "7d05da29-6865-4b89-9409-958add33ab61",
+    "problem_title": "Two Sum",
+    "problem_slug": "two-sum",
+    "platform": "leetcode",
+    "difficulty": "Easy",
+    "language": "python3",
+    "user_code": "class Solution:\n    def twoSum(self, nums: List[int], target: int) -> List[int]:\n        seen = {}\n        for i, num in enumerate(nums):\n            diff = target - num\n            if diff in seen:\n                return [seen[diff], i]\n            seen[num] = i\n        return []",
+    "overall_score": 100,
+    "optimality_score": 35,
+    "time_score": 25,
+    "space_score": 20,
+    "cleanliness_score": 20,
+    "user_time_complexity": "Hash Map Single-Pass Lookup (O(n))",
+    "user_space_complexity": "O(n)",
+    "optimal_time_complexity": "Hash Map Single-Pass Lookup (O(n))",
+    "optimal_space_complexity": "O(n)",
+    "why_suboptimal": "The student's approach is already the optimal solution for this problem. No better asymptotic time or space complexity can be achieved.",
+    "why_ideal": "It correctly identifies that checking for existence can be done in O(1) average time using a hash map. Furthermore, by doing it in a single pass while populating the hash map simultaneously, it avoids unnecessary pre-filling or multi-pass overhead, capturing both maximum efficiency and elegance.",
+    "summary_feedback": "This is the optimal approach for the Two Sum problem. By trading space for time, we reduce the lookup time from O(n) (in a brute force approach) to O(1) on average using a hash map, resulting in an optimal overall linear time complexity.",
+    "improvements": [
+      "The solution is already optimal and idiomatic.",
+      "Ensure type hints and imports are properly maintained if used in a larger context."
+    ],
+    "optimal_code": "class Solution:\n    def twoSum(self, nums: List[int], target: int) -> List[int]:\n        seen = {}\n        for i, num in enumerate(nums):\n            diff = target - num\n            if diff in seen:\n                return [seen[diff], i]\n            seen[num] = i\n        return []",
+    "paradigm": "Hash Map / Dictionary",
+    "follow_up_questions": [
+      {
+        "question": "What if the input array is already sorted? Can we achieve strict O(1) auxiliary space?",
+        "category": "Constraint",
+        "answer": "Yes! Use a Two-Pointer inward scan with left=0 and right=n-1. If sum < target advance left; if greater decrement right. This eliminates the hash map, achieving O(N) time with strict O(1) space."
+      },
+      {
+        "question": "What if the dataset contains 10^10 elements and exceeds single-machine RAM?",
+        "category": "Scale",
+        "answer": "Apply distributed range-partitioning or hash-sharding (e.g. Apache Spark). Hash-partition elements into bucket nodes so that any element x and its target - x pair are routed to deterministic paired workers."
+      }
+    ],
+    "id": "sub_1791823061888_hb05z",
+    "created_at": "2026-10-12T16:37:41.888Z"
+  },
+  {
+    "user_id": "7d05da29-6865-4b89-9409-958add33ab61",
+    "problem_title": "Two Sum",
+    "problem_slug": "two-sum",
+    "platform": "leetcode",
+    "difficulty": "Easy",
+    "language": "python3",
+    "user_code": "class Solution:\n    def twoSum(self, nums: List[int], target: int) -> List[int]:\n        n = len(nums)\n        for i in range(n):\n            for j in range(i + 1, n):\n                if nums[i] + nums[j] == target:\n                    return [i, j]\n        return []",
+    "overall_score": 45,
+    "optimality_score": 15,
+    "time_score": 5,
+    "space_score": 15,
+    "cleanliness_score": 0,
+    "user_time_complexity": "Brute Force Nested Iteration (O(n^2))",
+    "user_space_complexity": "O(1)",
+    "optimal_time_complexity": "Hash Map Single-Pass Lookup (O(n))",
+    "optimal_space_complexity": "O(n)",
+    "why_suboptimal": "The student's solution uses a nested loop structure which evaluates all pairs, leading to an O(n^2) time complexity. For constraints up to n = 10^4, this approach requires up to 5 * 10^7 operations, which is inefficient and violates the follow-up requirement of achieving a time complexity less than O(n^2).",
+    "why_ideal": "The hash map single-pass approach reduces the time complexity to linear time O(n) by performing constant time lookups for the complement of each number as we iterate through the list only once.",
+    "summary_feedback": "By utilizing a hash map, we trade off space complexity for a dramatic improvement in time complexity. Instead of scanning the remaining elements for a complement in O(n) time, the hash map allows O(1) expected time lookups, reducing the overall time complexity from O(n^2) to O(n).",
+    "improvements": [
+      "Replace the nested loops with a hash map to achieve O(n) time complexity.",
+      "Store numbers and their corresponding indices in a dictionary during a single pass through the array."
+    ],
+    "optimal_code": "class Solution:\n    def twoSum(self, nums: List[int], target: int) -> List[int]:\n        seen = {}\n        for i, num in enumerate(nums):\n            complement = target - num\n            if complement in seen:\n                return [seen[complement], i]\n            seen[num] = i\n        return []",
+    "paradigm": "Brute Force",
+    "follow_up_questions": [
+      {
+        "question": "What if the input array is already sorted? Can we achieve strict O(1) auxiliary space?",
+        "category": "Constraint",
+        "answer": "Yes! Use a Two-Pointer inward scan with left=0 and right=n-1. If sum < target advance left; if greater decrement right. This eliminates the hash map, achieving O(N) time with strict O(1) space."
+      },
+      {
+        "question": "What if the dataset contains 10^10 elements and exceeds single-machine RAM?",
+        "category": "Scale",
+        "answer": "Apply distributed range-partitioning or hash-sharding (e.g. Apache Spark). Hash-partition elements into bucket nodes so that any element x and its target - x pair are routed to deterministic paired workers."
+      }
+    ],
+    "id": "sub_1791822960900_4z42h",
+    "created_at": "2026-10-12T16:36:00.900Z"
+  }
+]

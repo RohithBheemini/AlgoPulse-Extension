@@ -1,53 +1,90 @@
 import { ProblemMetadata, AIAnalysisResult } from '../types';
 
-async function resolveBestModel(apiKey: string): Promise<string[]> {
-  const fallbackCandidates = [
-    'gemini-3.8-flash',
-    'gemini-3.5-flash-lite',
-    'gemini-1.5-flash',
-    'gemini-1.5-flash-latest',
-    'gemini-2.0-flash'
-  ];
+let cachedWorkingModel: string | null = null;
 
+// Dynamically query all supported generateContent models for this specific API key via Google's ModelService.ListModels
+export async function listAvailableModels(apiKey: string): Promise<string[]> {
   try {
     const listUrl = `https://generativelanguage.googleapis.com/v1beta/models?key=${encodeURIComponent(apiKey.trim())}`;
     const res = await fetch(listUrl);
     if (res.ok) {
-      const data = await res.json();
-      const available = (data.models || [])
-        .filter((m: any) => m.supportedGenerationMethods?.includes('generateContent'))
-        .map((m: any) => m.name.replace(/^models\//, ''));
+      const data: any = await res.json();
+      const models: any[] = data.models || [];
+      const generateModels = models
+        .filter((m) => Array.isArray(m.supportedGenerationMethods) && m.supportedGenerationMethods.includes('generateContent'))
+        .map((m) => m.name.replace(/^models\//, ''))
+        .filter((name) => !name.includes('embedding') && !name.includes('aqa') && !name.includes('imagen'));
 
-      console.log('[AlgoPulse] Available Gemini models for this API key:', available);
-
-      if (available.length > 0) {
-        // Prioritize: 3.8-flash > 3.5-flash-lite > other flash > any gemini
-        const sorted = [...available].sort((a, b) => {
-          if (a.includes('3.8-flash')) return -1;
-          if (b.includes('3.8-flash')) return 1;
-          if (a.includes('3.5-flash')) return -1;
-          if (b.includes('3.5-flash')) return 1;
-          if (a.includes('1.5-flash')) return -1;
-          if (b.includes('1.5-flash')) return 1;
-          if (a.includes('flash') && !b.includes('flash')) return -1;
-          if (!a.includes('flash') && b.includes('flash')) return 1;
-          return 0;
-        });
-        return sorted;
+      if (generateModels.length > 0) {
+        console.log('[AlgoPulse] Discovered models supporting generateContent from Google:', generateModels);
+        return generateModels;
       }
     } else {
-      console.warn('[AlgoPulse] Could not list models:', res.status, res.statusText);
+      console.warn('[AlgoPulse] ModelService.ListModels returned HTTP', res.status);
     }
   } catch (err) {
-    console.warn('[AlgoPulse] Error querying model list:', err);
+    console.warn('[AlgoPulse] Error querying ModelService.ListModels:', err);
+  }
+  return [];
+}
+
+export async function resolveBestModel(apiKey: string, preferredModel = 'auto'): Promise<string[]> {
+  const cleanPreferred = (preferredModel && preferredModel !== 'auto' && preferredModel.trim().length > 0)
+    ? preferredModel.trim()
+    : null;
+
+  // Real, verified fallback models if ListModels is unreachable
+  const safeFallbacks = [
+    'gemini-1.5-flash',
+    'gemini-2.0-flash',
+    'gemini-2.5-flash',
+    'gemini-1.5-pro',
+    'gemini-pro'
+  ];
+
+  // 1. Live discovery via Google's ModelService.ListModels
+  const liveModels = await listAvailableModels(apiKey);
+  const pool = liveModels.length > 0 ? liveModels : safeFallbacks;
+
+  // 2. Flexible sorting: prioritize fast Flash models, user's preference, or cached working model
+  const sorted = [...pool].sort((a, b) => {
+    // If user specified a preferred model, put it first
+    if (cleanPreferred) {
+      if (a.toLowerCase() === cleanPreferred.toLowerCase()) return -1;
+      if (b.toLowerCase() === cleanPreferred.toLowerCase()) return 1;
+    }
+    // If a model worked previously in this session, prioritize it
+    if (cachedWorkingModel) {
+      if (a === cachedWorkingModel) return -1;
+      if (b === cachedWorkingModel) return 1;
+    }
+    // Prioritize fast/free flash models
+    const aFlash = a.includes('flash');
+    const bFlash = b.includes('flash');
+    if (aFlash && !bFlash) return -1;
+    if (!aFlash && bFlash) return 1;
+
+    // Prioritize 2.0 or 1.5 over older
+    if (a.includes('2.0') && !b.includes('2.0')) return -1;
+    if (!a.includes('2.0') && b.includes('2.0')) return 1;
+    if (a.includes('1.5') && !b.includes('1.5')) return -1;
+    if (!a.includes('1.5') && b.includes('1.5')) return 1;
+
+    return b.localeCompare(a, undefined, { numeric: true });
+  });
+
+  // If user typed a custom model name not found in pool, prepend it so it gets attempted first
+  if (cleanPreferred && !sorted.includes(cleanPreferred)) {
+    return [cleanPreferred, ...sorted];
   }
 
-  return fallbackCandidates;
+  return sorted;
 }
 
 export async function analyzeCodeWithGemini(
   metadata: ProblemMetadata,
-  apiKey: string
+  apiKey: string,
+  preferredModel = 'auto'
 ): Promise<AIAnalysisResult> {
   if (!apiKey || apiKey.trim() === '') {
     throw new Error('Gemini API key is not set. Please open AlgoPulse extension popup and configure your API key.');
@@ -147,7 +184,7 @@ Evaluate the student's solution focusing on their algorithmic approach and outpu
   };
 
   // Dynamically discover valid models for this user's API key
-  const candidateModels = await resolveBestModel(apiKey);
+  const candidateModels = await resolveBestModel(apiKey, preferredModel);
   let lastErrorMsg = 'Failed to communicate with Gemini API';
   let responseData: any = null;
 
@@ -165,6 +202,7 @@ Evaluate the student's solution focusing on their algorithmic approach and outpu
 
       if (res.ok) {
         responseData = await res.json();
+        cachedWorkingModel = model;
         console.log(`[AlgoPulse] Successfully evaluated using model: ${model}`);
         break; // Success!
       } else {

@@ -1,11 +1,12 @@
-import { analyzeCodeWithGemini } from './gemini';
+import { analyzeCodeWithGemini, resolveBestModel } from './gemini';
 import { ProblemMetadata, AIAnalysisResult, ExtensionSettings, SyncSubmissionPayload, SubmissionHistoryItem } from '../types';
 
 const DEFAULT_SETTINGS: ExtensionSettings = {
   geminiApiKey: '',
   dashboardUrl: 'http://localhost:3000',
   extensionToken: '',
-  autoSync: true
+  autoSync: true,
+  preferredModel: 'auto'
 };
 
 async function getStoredSettings(): Promise<ExtensionSettings> {
@@ -77,9 +78,11 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
         const apiKey = message.payload?.apiKey;
         if (!apiKey) return { success: false, message: 'API key is empty.' };
         
-        const candidateModels = ['gemini-3.8-flash', 'gemini-2.0-flash', 'gemini-1.5-flash'];
+        const settings = await getStoredSettings();
+        const candidateModels = await resolveBestModel(apiKey, settings.preferredModel || 'auto');
         let success = false;
         let lastErr = '';
+        let workingModel = '';
 
         for (const model of candidateModels) {
           try {
@@ -93,6 +96,7 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
             );
             if (testRes.ok) {
               success = true;
+              workingModel = model;
               break;
             } else {
               const err = await testRes.json().catch(() => ({}));
@@ -104,7 +108,7 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
         }
 
         if (success) {
-          return { success: true, message: 'Gemini API Key is valid and active!' };
+          return { success: true, message: `Connected to Gemini (${workingModel}) successfully!` };
         }
         return { success: false, message: lastErr || 'Failed to ping Gemini API' };
       }
@@ -134,7 +138,11 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
         }
 
         // Run Gemini Analysis
-        const analysis: AIAnalysisResult = await analyzeCodeWithGemini(metadata, settings.geminiApiKey);
+        const analysis: AIAnalysisResult = await analyzeCodeWithGemini(
+          metadata,
+          settings.geminiApiKey,
+          settings.preferredModel || 'auto'
+        );
 
         const userApproachDisplay = analysis.user_approach?.name 
           ? `${analysis.user_approach.name} (${analysis.user_approach.time_complexity})`

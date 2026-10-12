@@ -20,7 +20,8 @@ export const Popup: React.FC = () => {
     geminiApiKey: '',
     dashboardUrl: 'http://localhost:3000',
     extensionToken: '',
-    autoSync: true
+    autoSync: true,
+    preferredModel: 'auto'
   });
   const [history, setHistory] = useState<SubmissionHistoryItem[]>([]);
   const [showKey, setShowKey] = useState(false);
@@ -194,6 +195,24 @@ export const Popup: React.FC = () => {
                   <span>{keyTestStatus.message}</span>
                 </div>
               )}
+            </div>
+
+            {/* Gemini Model Preference */}
+            <div className="space-y-1.5">
+              <label className="text-xs font-semibold text-[#f0f6fc] flex items-center gap-1.5">
+                <Sparkles className="w-3.5 h-3.5 text-[#FBBC05]" />
+                Gemini Model
+              </label>
+              <input
+                type="text"
+                value={settings.preferredModel || 'auto'}
+                onChange={(e) => setSettings({ ...settings, preferredModel: e.target.value })}
+                placeholder="auto (or gemini-1.5-flash, gemini-2.0-flash)"
+                className="w-full px-3 py-2 bg-[#161b22] border border-[#30363d] rounded-lg text-xs text-[#f0f6fc] placeholder-[#8b949e] focus:outline-none focus:border-[#4285F4] transition"
+              />
+              <span className="text-[10px] text-[#8b949e] block">
+                Default: <code>auto</code> (dynamically queries Google ListModels API for active models)
+              </span>
             </div>
 
             {/* Hosted Dashboard URL */}

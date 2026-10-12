@@ -48,6 +48,7 @@ export interface ExtensionSettings {
   dashboardUrl: string;
   extensionToken: string;
   autoSync: boolean;
+  preferredModel?: string;
 }
 
 export interface SyncSubmissionPayload {

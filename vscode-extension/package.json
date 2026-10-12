@@ -114,14 +114,8 @@
         },
         "algopulse.preferredModel": {
           "type": "string",
-          "default": "gemini-3.8-flash",
-          "enum": [
-            "gemini-3.8-flash",
-            "gemini-2.0-flash",
-            "gemini-1.5-flash",
-            "auto"
-          ],
-          "description": "Preferred free Gemini model for code review."
+          "default": "auto",
+          "description": "Preferred Gemini model for code review. Leave as 'auto' for dynamic discovery via Google ListModels API, or enter any supported model."
         }
       }
     }
