@@ -1,5 +1,292 @@
 [
   {
+    "user_id": "24e6f7df-98fe-40b7-97fc-525217fab55f",
+    "problem_title": "Kadanes Algorithm 1587115620",
+    "problem_slug": "kadanes-algorithm-1587115620",
+    "platform": "geeksforgeeks",
+    "difficulty": "Medium",
+    "language": "python3",
+    "user_code": "class Solution:\r\n    def maxSubArraySum(self, arr):\r\n        max_so_far = arr[0]\r\n        curr_max = arr[0]\r\n\r\n        for i in range(1, len(arr)):\r\n            curr_max = max(arr[i], curr_max + arr[i])\r\n            max_so_far = max(max_so_far, curr_max)\r\n\r\n        return max_so_far",
+    "overall_score": 100,
+    "optimality_score": 35,
+    "time_score": 25,
+    "space_score": 10,
+    "cleanliness_score": 10,
+    "user_time_complexity": "Kadane's Algorithm (O(N))",
+    "user_space_complexity": "O(1)",
+    "optimal_time_complexity": "Kadane's Algorithm (O(N))",
+    "optimal_space_complexity": "O(1)",
+    "why_suboptimal": "The student's solution is already the optimal solution for this problem.",
+    "why_ideal": "It correctly identifies the overlapping subproblem property and applies Kadane's algorithm with optimal time complexity O(N) and space complexity O(1).",
+    "summary_feedback": "This is the optimal approach for finding the maximum subarray sum. It processes the array in a single pass without extra memory.",
+    "improvements": [
+      "The code is already concise and optimal.",
+      "Ensure input constraints (like non-empty array) are safely handled or documented."
+    ],
+    "optimal_code": "class Solution:\n    def maxSubArraySum(self, arr):\n        max_so_far = arr[0]\n        curr_max = arr[0]\n\n        for i in range(1, len(arr)):\n            curr_max = max(arr[i], curr_max + arr[i])\n            max_so_far = max(max_so_far, curr_max)\n\n        return max_so_far",
+    "paradigm": "Dynamic Programming / Greedy",
+    "follow_up_questions": [
+      {
+        "question": "How does your solution scale if the dataset size increases from N = 10^5 to N = 10^9?",
+        "category": "Scale",
+        "answer": "Analyze memory bounds. If N exceeds RAM, replace in-memory structures with disk-backed external merge-sort or chunked map-reduce streams."
+      },
+      {
+        "question": "Can you solve this with strict O(1) auxiliary memory without modifying the input array?",
+        "category": "Constraint",
+        "answer": "Examine mathematical invariants, bit manipulation, or two-pointer cycles to eliminate auxiliary dynamic allocations."
+      }
+    ],
+    "id": "sub_1791827512215_1x6sl",
+    "created_at": "2026-10-12T17:51:52.215Z"
+  },
+  {
+    "user_id": "24e6f7df-98fe-40b7-97fc-525217fab55f",
+    "problem_title": "Kadanes Algorithm 1587115620",
+    "problem_slug": "kadanes-algorithm-1587115620",
+    "platform": "geeksforgeeks",
+    "difficulty": "Medium",
+    "language": "python3",
+    "user_code": "class Solution:\r\n    ## Complete this function\r\n    # Function to find the sum of contiguous subarray with maximum sum.\r\n    def maxSubArraySum(self, arr):\r\n        n = len(arr)\r\n        max_sum = float('-inf')\r\n\r\n        # O(N^2) quadratic checks\r\n        for i in range(n):\r\n            curr_sum = 0\r\n            for j in range(i, n):\r\n                curr_sum += arr[j]\r\n                if curr_sum > max_sum:\r\n                    max_sum = curr_sum\r\n\r\n        return max_sum",
+    "overall_score": 40,
+    "optimality_score": 15,
+    "time_score": 5,
+    "space_score": 20,
+    "cleanliness_score": 10,
+    "user_time_complexity": "Nested Loop Brute Force (O(N^2))",
+    "user_space_complexity": "O(1)",
+    "optimal_time_complexity": "Kadane's Algorithm (O(N))",
+    "optimal_space_complexity": "O(1)",
+    "why_suboptimal": "The student's solution uses a brute force approach with nested loops, resulting in an O(N^2) time complexity. This is too slow for large inputs and will result in a Time Limit Exceeded (TLE) error on standard competitive programming platforms.",
+    "why_ideal": "Kadane's algorithm solves the maximum subarray problem in linear O(N) time and constant O(1) space by dynamically updating the maximum sum ending at the current index in a single pass.",
+    "summary_feedback": "Kadane's algorithm makes use of the optimal substructure of the problem. At each element, we decide whether to add it to the existing running subarray sum or start a new subarray beginning at the current element.",
+    "improvements": [
+      "Replace the nested loops with a single pass linear scan.",
+      "Maintain a running sum variable and a global maximum variable."
+    ],
+    "optimal_code": "class Solution:\n    def maxSubArraySum(self, arr):\n        max_current = max_global = arr[0]\n        \n        for i in range(1, len(arr)):\n            max_current = max(arr[i], max_current + arr[i])\n            if max_current > max_global:\n                max_global = max_current\n                \n        return max_global",
+    "paradigm": "Brute Force",
+    "follow_up_questions": [
+      {
+        "question": "How does your solution scale if the dataset size increases from N = 10^5 to N = 10^9?",
+        "category": "Scale",
+        "answer": "Analyze memory bounds. If N exceeds RAM, replace in-memory structures with disk-backed external merge-sort or chunked map-reduce streams."
+      },
+      {
+        "question": "Can you solve this with strict O(1) auxiliary memory without modifying the input array?",
+        "category": "Constraint",
+        "answer": "Examine mathematical invariants, bit manipulation, or two-pointer cycles to eliminate auxiliary dynamic allocations."
+      }
+    ],
+    "id": "sub_1791827465179_legi6",
+    "created_at": "2026-10-12T17:51:05.179Z"
+  },
+  {
+    "user_id": "24e6f7df-98fe-40b7-97fc-525217fab55f",
+    "problem_title": "Algosample1",
+    "problem_slug": "algosample1",
+    "platform": "vscode",
+    "difficulty": "Easy",
+    "language": "java",
+    "user_code": "\r\nclass Solution {\r\n    public int[] twoSum(int[] nums, int target) {\r\n        for (int i = 0; i < nums.length; i++) {\r\n            for (int j = i + 1; j < nums.length; j++) {\r\n                if (nums[i] + nums[j] == target) {\r\n                    return new int[]{i, j};\r\n                }\r\n            }\r\n        }\r\n        return new int[]{-1, -1};\r\n    }\r\n}\r\n",
+    "overall_score": 45,
+    "optimality_score": 5,
+    "time_score": 5,
+    "space_score": 10,
+    "cleanliness_score": 5,
+    "user_time_complexity": "Nested Loops Brute Force (O(n^2))",
+    "user_space_complexity": "O(1)",
+    "optimal_time_complexity": "Hash Map Single-Pass Lookup (O(n))",
+    "optimal_space_complexity": "O(n)",
+    "why_suboptimal": "The student's approach checks every pair redundantly using nested loops. As the input size grows, the number of operations scales quadratically, making it inefficient for large arrays.",
+    "why_ideal": "The ideal approach trades space for time. By storing previously visited elements in a hash map, we can instantly query whether a required complement exists in constant time.",
+    "summary_feedback": "By utilizing a Hash Map, we reduce the inner search time from O(n) to O(1) on average, bringing the total time complexity down from quadratic to linear.",
+    "improvements": [
+      "Replace the O(n^2) nested loops with an O(n) hash map lookup.",
+      "Avoid unnecessary space allocation for the return statement when no solution is found (though problem constraints usually guarantee a solution)."
+    ],
+    "optimal_code": "import java.util.HashMap;\nimport java.util.Map;\n\nclass Solution {\n    public int[] twoSum(int[] nums, int target) {\n        Map<Integer, Integer> map = new HashMap<>();\n        for (int i = 0; i < nums.length; i++) {\n            int complement = target - nums[i];\n            if (map.containsKey(complement)) {\n                return new int[] { map.get(complement), i };\n            }\n            map.put(nums[i], i);\n        }\n        return new int[] {};\n    }\n}",
+    "paradigm": "Brute Force",
+    "follow_up_questions": [
+      {
+        "question": "How does your solution scale if the dataset size increases from N = 10^5 to N = 10^9?",
+        "category": "Scale",
+        "answer": "Analyze memory bounds. If N exceeds RAM, replace in-memory structures with disk-backed external merge-sort or chunked map-reduce streams."
+      },
+      {
+        "question": "Can you solve this with strict O(1) auxiliary memory without modifying the input array?",
+        "category": "Constraint",
+        "answer": "Examine mathematical invariants, bit manipulation, or two-pointer cycles to eliminate auxiliary dynamic allocations."
+      }
+    ],
+    "id": "sub_1791827332362_o1kp3",
+    "created_at": "2026-10-12T17:48:52.362Z"
+  },
+  {
+    "user_id": "948f8d18-1cfc-41ef-8d2a-00ba261daee4",
+    "problem_title": "Algosample1",
+    "problem_slug": "algosample1",
+    "platform": "vscode",
+    "difficulty": "Easy",
+    "language": "java",
+    "user_code": "\r\nclass Solution {\r\n    public int[] twoSum(int[] nums, int target) {\r\n        for (int i = 0; i < nums.length; i++) {\r\n            for (int j = i + 1; j < nums.length; j++) {\r\n                if (nums[i] + nums[j] == target) {\r\n                    return new int[]{i, j};\r\n                }\r\n            }\r\n        }\r\n        return new int[]{-1, -1};\r\n    }\r\n}\r\n",
+    "overall_score": 45,
+    "optimality_score": 5,
+    "time_score": 5,
+    "space_score": 10,
+    "cleanliness_score": 5,
+    "user_time_complexity": "Nested Iteration Brute Force (O(n^2))",
+    "user_space_complexity": "O(1)",
+    "optimal_time_complexity": "Hash Map Single-Pass Lookup (O(n))",
+    "optimal_space_complexity": "O(n)",
+    "why_suboptimal": "The student's solution uses a nested loop to check all pairs, resulting in O(n^2) time complexity. This does not scale well for large arrays when a linear O(n) time solution using a hash map is possible.",
+    "why_ideal": "The hash map approach trades O(n) space complexity to achieve an optimal O(n) time complexity by memorizing previously visited numbers and their indices for instant O(1) lookups.",
+    "summary_feedback": "By utilizing a Hash Map, we reduce the search time for each element's complement from O(n) to O(1) on average, bringing the overall time complexity down from quadratic to linear.",
+    "improvements": [
+      "Replace the nested loops with a HashMap to achieve linear time complexity.",
+      "Store each number and its index in the map dynamically as you iterate."
+    ],
+    "optimal_code": "import java.util.HashMap;\nimport java.util.Map;\n\nclass Solution {\n    public int[] twoSum(int[] nums, int target) {\n        Map<Integer, Integer> map = new HashMap<>();\n        for (int i = 0; i < nums.length; i++) {\n            int complement = target - nums[i];\n            if (map.containsKey(complement)) {\n                return new int[] { map.get(complement), i };\n            }\n            map.put(nums[i], i);\n        }\n        return new int[] { -1, -1 };\n    }\n}",
+    "paradigm": "Brute Force",
+    "follow_up_questions": [
+      {
+        "question": "How does your solution scale if the dataset size increases from N = 10^5 to N = 10^9?",
+        "category": "Scale",
+        "answer": "Analyze memory bounds. If N exceeds RAM, replace in-memory structures with disk-backed external merge-sort or chunked map-reduce streams."
+      },
+      {
+        "question": "Can you solve this with strict O(1) auxiliary memory without modifying the input array?",
+        "category": "Constraint",
+        "answer": "Examine mathematical invariants, bit manipulation, or two-pointer cycles to eliminate auxiliary dynamic allocations."
+      }
+    ],
+    "id": "sub_1791827313175_tcea7",
+    "created_at": "2026-10-12T17:48:33.175Z"
+  },
+  {
+    "user_id": "24e6f7df-98fe-40b7-97fc-525217fab55f",
+    "problem_title": "Palindrome Number",
+    "problem_slug": "palindrome-number",
+    "platform": "leetcode",
+    "difficulty": "Easy",
+    "language": "java",
+    "user_code": "class Solution {\n    public boolean isPalindrome(int x) {\n            int temp=x;\n            int rev=0;\n            if(temp==0){\n                return true;\n            }\n            while(temp>0){\n                rev=rev*10 + temp%10;\n                temp/=10;\n            }\n            if(rev==x){\n                return true;\n            }\n        return false;\n    }\n}",
+    "overall_score": 90,
+    "optimality_score": 32,
+    "time_score": 23,
+    "space_score": 20,
+    "cleanliness_score": 18,
+    "user_time_complexity": "Full Integer Reversal (O(log10(x)))",
+    "user_space_complexity": "O(1)",
+    "optimal_time_complexity": "Half Integer Reversal (O(log10(x)))",
+    "optimal_space_complexity": "O(1)",
+    "why_suboptimal": "The student's approach reverses the entire number, which can potentially cause an integer overflow if the reversed number exceeds the maximum 32-bit signed integer limit. Additionally, it handles negative numbers incorrectly if they are passed into the loop (though negative numbers are caught implicitly because temp > 0 is false for them, but 0 is handled via a special check).",
+    "why_ideal": "Reversing only half of the number prevents overflow issues entirely and saves half of the mathematical operations by stopping when the reversed half is greater than or equal to the remaining part of the number.",
+    "summary_feedback": "Reversing only half the number avoids potential integer overflow when reversing a large palindrome near the 32-bit signed integer limit and halves the number of loop iterations.",
+    "improvements": [
+      "Handle negative numbers explicitly at the beginning since they can never be palindromes.",
+      "Optimize the loop to only reverse half of the digits to prevent integer overflow and improve performance."
+    ],
+    "optimal_code": "class Solution {\n    public boolean isPalindrome(int x) {\n        // Negative numbers and numbers ending in 0 (except 0 itself) are not palindromes\n        if (x < 0 || (x % 10 == 0 && x != 0)) {\n            return false;\n        }\n        \n        int revertedNumber = 0;\n        while (x > revertedNumber) {\n            revertedNumber = revertedNumber * 10 + x % 10;\n            x /= 10;\n        }\n        \n        // When the length is an odd number, we can get rid of the middle digit by revertedNumber / 10\n        // For example, when input is 12321, at the end of the loop we get x = 12, revertedNumber = 123\n        // So we compare x and revertedNumber / 10\n        return x == revertedNumber || x == revertedNumber / 10;\n    }\n}",
+    "paradigm": "Mathematical Digit Extraction",
+    "follow_up_questions": [
+      {
+        "question": "How does your solution scale if the dataset size increases from N = 10^5 to N = 10^9?",
+        "category": "Scale",
+        "answer": "Analyze memory bounds. If N exceeds RAM, replace in-memory structures with disk-backed external merge-sort or chunked map-reduce streams."
+      },
+      {
+        "question": "Can you solve this with strict O(1) auxiliary memory without modifying the input array?",
+        "category": "Constraint",
+        "answer": "Examine mathematical invariants, bit manipulation, or two-pointer cycles to eliminate auxiliary dynamic allocations."
+      }
+    ],
+    "id": "sub_1791827208537_o5fdi",
+    "created_at": "2026-10-12T17:46:48.537Z"
+  },
+  {
+    "user_id": "948f8d18-1cfc-41ef-8d2a-00ba261daee4",
+    "problem_title": "Algosample1",
+    "problem_slug": "algosample1",
+    "platform": "vscode",
+    "difficulty": "Easy",
+    "language": "java",
+    "user_code": "import java.util.HashMap;\r\nimport java.util.Map;\r\n\r\nclass Solution {\r\n    public int[] twoSum(int[] nums, int target) {\r\n        Map<Integer, Integer> map = new HashMap<>();\r\n        for (int i = 0; i < nums.length; i++) {\r\n            int complement = target - nums[i];\r\n            if (map.containsKey(complement)) {\r\n                return new int[] { map.get(complement), i };\r\n            }\r\n            map.put(nums[i], i);\r\n        }\r\n        return new int[] { -1, -1 };\r\n    }\r\n}",
+    "overall_score": 100,
+    "optimality_score": 25,
+    "time_score": 25,
+    "space_score": 20,
+    "cleanliness_score": 20,
+    "user_time_complexity": "Hash Map Single-Pass Lookup (O(n))",
+    "user_space_complexity": "O(n)",
+    "optimal_time_complexity": "Hash Map Single-Pass Lookup (O(n))",
+    "optimal_space_complexity": "O(n)",
+    "why_suboptimal": "The student's code is already optimal for this problem, achieving the best possible time complexity O(n) and optimal space complexity O(n).",
+    "why_ideal": "The single-pass hash map approach successfully reduces redundant nested traversals by using O(1) average time complexity lookups, immediately capturing the solution as soon as the complement is encountered.",
+    "summary_feedback": "This is already the theoretically optimal approach. By performing the lookup and insertion in a single pass, we reduce the time complexity from O(n^2) (brute force) to O(n) while trading off space for time.",
+    "improvements": [
+      "The code is exceptionally clean, idiomatic, and optimal.",
+      "No changes are necessary."
+    ],
+    "optimal_code": "import java.util.HashMap;\nimport java.util.Map;\n\nclass Solution {\n    public int[] twoSum(int[] nums, int target) {\n        Map<Integer, Integer> map = new HashMap<>();\n        for (int i = 0; i < nums.length; i++) {\n            int complement = target - nums[i];\n            if (map.containsKey(complement)) {\n                return new int[] { map.get(complement), i };\n            }\n            map.put(nums[i], i);\n        }\n        return new int[] { -1, -1 };\n    }\n}",
+    "paradigm": "Hash Map",
+    "follow_up_questions": [
+      {
+        "question": "How does your solution scale if the dataset size increases from N = 10^5 to N = 10^9?",
+        "category": "Scale",
+        "answer": "Analyze memory bounds. If N exceeds RAM, replace in-memory structures with disk-backed external merge-sort or chunked map-reduce streams."
+      },
+      {
+        "question": "Can you solve this with strict O(1) auxiliary memory without modifying the input array?",
+        "category": "Constraint",
+        "answer": "Examine mathematical invariants, bit manipulation, or two-pointer cycles to eliminate auxiliary dynamic allocations."
+      }
+    ],
+    "id": "sub_1791826215821_pqg5r",
+    "created_at": "2026-10-12T17:30:15.821Z"
+  },
+  {
+    "user_id": "948f8d18-1cfc-41ef-8d2a-00ba261daee4",
+    "problem_title": "Algosample1",
+    "problem_slug": "algosample1",
+    "platform": "vscode",
+    "difficulty": "Easy",
+    "language": "java",
+    "user_code": "\r\nclass Solution {\r\n    public int[] twoSum(int[] nums, int target) {\r\n        for (int i = 0; i < nums.length; i++) {\r\n            for (int j = i + 1; j < nums.length; j++) {\r\n                if (nums[i] + nums[j] == target) {\r\n                    return new int[]{i, j};\r\n                }\r\n            }\r\n        }\r\n        return new int[]{-1, -1};\r\n    }\r\n}\r\n",
+    "overall_score": 45,
+    "optimality_score": 5,
+    "time_score": 5,
+    "space_score": 15,
+    "cleanliness_score": 10,
+    "user_time_complexity": "Brute Force Nested Iteration (O(N^2))",
+    "user_space_complexity": "O(1)",
+    "optimal_time_complexity": "Hash Map Single-Pass Lookup (O(N))",
+    "optimal_space_complexity": "O(N)",
+    "why_suboptimal": "The student's approach checks every pair independently, leading to redundant work with a O(N^2) time complexity. For large arrays, this results in a Time Limit Exceeded (TLE) error.",
+    "why_ideal": "By utilizing a hash map, we trade a small amount of space for a dramatic reduction in time complexity, finding the solution in a single pass of O(N) time.",
+    "summary_feedback": "As you iterate through the array, calculate the complement for each element (target - current_element). Check if this complement already exists in a hash map. If it does, you've found the two indices. If not, store the current element and its index in the hash map and continue.",
+    "improvements": [
+      "Replace the nested loops with a single loop and a HashMap to achieve linear time complexity.",
+      "Ensure edge cases like empty arrays or missing pairs are handled cleanly (though standard constraints guarantee one solution)."
+    ],
+    "optimal_code": "import java.util.HashMap;\nimport java.util.Map;\n\nclass Solution {\n    public int[] twoSum(int[] nums, int target) {\n        Map<Integer, Integer> map = new HashMap<>();\n        for (int i = 0; i < nums.length; i++) {\n            int complement = target - nums[i];\n            if (map.containsKey(complement)) {\n                return new int[] { map.get(complement), i };\n            }\n            map.put(nums[i], i);\n        }\n        return new int[] { -1, -1 };\n    }\n}",
+    "paradigm": "Brute Force",
+    "follow_up_questions": [
+      {
+        "question": "How does your solution scale if the dataset size increases from N = 10^5 to N = 10^9?",
+        "category": "Scale",
+        "answer": "Analyze memory bounds. If N exceeds RAM, replace in-memory structures with disk-backed external merge-sort or chunked map-reduce streams."
+      },
+      {
+        "question": "Can you solve this with strict O(1) auxiliary memory without modifying the input array?",
+        "category": "Constraint",
+        "answer": "Examine mathematical invariants, bit manipulation, or two-pointer cycles to eliminate auxiliary dynamic allocations."
+      }
+    ],
+    "id": "sub_1791826162705_h6chy",
+    "created_at": "2026-10-12T17:29:22.705Z"
+  },
+  {
     "user_id": "7d05da29-6865-4b89-9409-958add33ab61",
     "problem_title": "Palindrome Number",
     "problem_slug": "palindrome-number",
