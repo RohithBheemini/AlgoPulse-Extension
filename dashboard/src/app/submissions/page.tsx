@@ -53,7 +53,13 @@ export default function SubmissionsPage() {
   const filtered = submissions.filter((sub) => {
     const matchesSearch = sub.problem_title.toLowerCase().includes(search.toLowerCase());
     const matchesDiff = difficultyFilter === 'All' || sub.difficulty === difficultyFilter;
-    const matchesPlatform = platformFilter === 'All' || (sub.platform || 'leetcode').toLowerCase() === platformFilter.toLowerCase();
+    const plat = (sub.platform || 'leetcode').toLowerCase();
+    const matchesPlatform =
+      platformFilter === 'All' ||
+      (platformFilter === 'VS Code' && plat.includes('vscode')) ||
+      (platformFilter === 'GeeksforGeeks' && (plat.includes('geeksforgeeks') || plat.includes('gfg'))) ||
+      (platformFilter === 'LeetCode' && plat.includes('leetcode')) ||
+      (platformFilter === 'HackerRank' && plat.includes('hackerrank'));
     return matchesSearch && matchesDiff && matchesPlatform;
   }).sort((a, b) => {
     if (sortBy === 'score') {
@@ -98,7 +104,7 @@ export default function SubmissionsPage() {
         <div className="flex flex-wrap items-center gap-2.5 w-full md:w-auto">
           {/* Platform Filter */}
           <div className="flex items-center gap-1 bg-[#0d1117] p-1 rounded-lg border border-[#30363d] text-xs">
-            {['All', 'LeetCode', 'GeeksforGeeks', 'HackerRank'].map((plat) => (
+            {['All', 'LeetCode', 'GeeksforGeeks', 'HackerRank', 'VS Code'].map((plat) => (
               <button
                 key={plat}
                 onClick={() => setPlatformFilter(plat)}
@@ -152,7 +158,7 @@ export default function SubmissionsPage() {
         <div className="p-12 text-center rounded-xl bg-[#161b22]/50 border border-dashed border-[#30363d] text-[#8b949e] space-y-2">
           <Code2 className="w-8 h-8 mx-auto text-[#6e7681]" />
           <p className="font-semibold text-[#f0f6fc]">No submissions match your filter</p>
-          <p className="text-xs text-[#8b949e]">Try adjusting your search query or submit code from LeetCode / GeeksforGeeks / HackerRank.</p>
+          <p className="text-xs text-[#8b949e]">Try adjusting your search query or submit code from LeetCode, GeeksforGeeks, HackerRank, or VS Code.</p>
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -162,6 +168,8 @@ export default function SubmissionsPage() {
                 ? 'GFG'
                 : sub.platform === 'hackerrank'
                 ? 'HackerRank'
+                : sub.platform === 'vscode'
+                ? 'VS Code'
                 : 'LeetCode';
 
             return (

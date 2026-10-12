@@ -28,7 +28,9 @@ import {
   Laptop,
   CheckCheck,
   Search,
-  GitBranch
+  GitBranch,
+  RotateCcw,
+  RefreshCw
 } from 'lucide-react';
 import { useAuth } from '@/components/AuthProvider';
 
@@ -41,7 +43,7 @@ const FAQ_ITEMS = [
   {
     question: 'How does AlgoPulse work in the Browser vs VS Code?',
     answer:
-      'In your browser (Chrome/Edge/Brave), AlgoPulse attaches directly to LeetCode, GeeksforGeeks, and HackerRank via content scripts, injecting a floating widget and an interactive slide-over review drawer directly over the Monaco/Ace editor. In VS Code, it operates as a native extension with an Activity Bar sidepanel, responding to Ctrl+Alt+A to evaluate your active workspace file and offering a 1-click "Insert Optimal Code into Editor" button.'
+      'In your browser (Chrome/Edge/Brave), AlgoPulse attaches directly to LeetCode, GeeksforGeeks, and HackerRank via content scripts, injecting a floating widget and an interactive slide-over review drawer directly over the Monaco/Ace editor. In VS Code, it operates as a native desktop extension with an Activity Bar sidepanel, responding to Ctrl+Alt+A to evaluate your active workspace file and offering a 1-click "Insert Optimal Code into Editor" button.'
   },
   {
     question: 'How do Progressive Hints work without giving away the complete answer?',
@@ -76,6 +78,8 @@ export default function HomePage() {
   const [selectedHint, setSelectedHint] = useState<number>(1);
   const [codeInserted, setCodeInserted] = useState<boolean>(false);
   const [copiedToken, setCopiedToken] = useState<boolean>(false);
+  const [isAnalyzing, setIsAnalyzing] = useState<boolean>(false);
+  const [analyzeSuccessToast, setAnalyzeSuccessToast] = useState<string | null>(null);
 
   const token = profile?.extension_token || 'ap_sec_9a7b3e1f0c4d2e8';
 
@@ -90,6 +94,101 @@ export default function HomePage() {
     setDemoApproach('optimal');
     setTimeout(() => setCodeInserted(false), 3000);
   };
+
+  const handleResetVsCode = () => {
+    setCodeInserted(false);
+    setDemoApproach('suboptimal');
+  };
+
+  const triggerMockAnalysis = (source: string) => {
+    setIsAnalyzing(true);
+    setTimeout(() => {
+      setIsAnalyzing(false);
+      setAnalyzeSuccessToast(`Evaluated by Gemini 3.8 Flash from ${source}!`);
+      setTimeout(() => setAnalyzeSuccessToast(null), 3000);
+    }, 450);
+  };
+
+  // Problem-specific data for Browser Demo
+  const browserData = {
+    leetcode: {
+      title: '1. Two Sum',
+      url: 'https://leetcode.com/problems/two-sum/',
+      engine: 'Monaco Engine Attached',
+      description: 'Given an array of integers nums and an integer target, return indices of the two numbers such that they add up to target.',
+      optimalCode: `class Solution:
+    def twoSum(self, nums: List[int], target: int) -> List[int]:
+        # Optimal Single-Pass Hash Table: O(N) Time, O(N) Space
+        seen = {}
+        for i, num in enumerate(nums):
+            diff = target - num
+            if diff in seen:
+                return [seen[diff], i]
+            seen[num] = i
+        return []`,
+      suboptimalCode: `class Solution:
+    def twoSum(self, nums: List[int], target: int) -> List[int]:
+        # Suboptimal Brute Force: O(N²) Time, O(1) Space
+        n = len(nums)
+        for i in range(n):
+            for j in range(i + 1, n):
+                if nums[i] + nums[j] == target:
+                    return [i, j]
+        return []`,
+      optimalScore: 100,
+      suboptimalScore: 42,
+      optimalBreakdown: { opt: '35 / 35', time: '25 / 25 (O(N))', space: '20 / 20 (O(N))' },
+      suboptimalBreakdown: { opt: '15 / 35', time: '8 / 25 (O(N²))', space: '10 / 20 (O(1))' },
+      optimalInsight: 'Single-pass hash table stores complements with amortized O(1) lookup. Reaches the theoretical lower bound for two-sum.',
+      suboptimalInsight: 'Quadratic nested loops result in O(N²) time complexity, which causes Time Limit Exceeded (TLE) on large test inputs.',
+      hints: {
+        1: 'For every number x, the required complement is target - x. Can you find it faster than scanning the entire list?',
+        2: 'Trade O(N) memory for time: use a Hash Map to store elements and their index positions.',
+        3: 'Populate your hash map dynamically in a single pass as you iterate so you never match a number with itself.'
+      }
+    },
+    gfg: {
+      title: 'Subarray with Given Sum',
+      url: 'https://practice.geeksforgeeks.org/problems/subarray-with-given-sum/',
+      engine: 'Ace & CodeMirror Injected',
+      description: 'Given an unsorted array arr of size N of non-negative integers, find a continuous sub-array which adds to a given sum S.',
+      optimalCode: `class Solution:
+    def subarraySum(self, arr: List[int], n: int, s: int) -> List[int]:
+        # Optimal Two-Pointer Sliding Window: O(N) Time, O(1) Space
+        left, curr_sum = 0, 0
+        for right in range(n):
+            curr_sum += arr[right]
+            while curr_sum > s and left < right:
+                curr_sum -= arr[left]
+                left += 1
+            if curr_sum == s:
+                return [left + 1, right + 1] # 1-based indexing
+        return [-1]`,
+      suboptimalCode: `class Solution:
+    def subarraySum(self, arr: List[int], n: int, s: int) -> List[int]:
+        # Suboptimal Nested For-Loops: O(N²) Time
+        for i in range(n):
+            curr_sum = 0
+            for j in range(i, n):
+                curr_sum += arr[j]
+                if curr_sum == s:
+                    return [i + 1, j + 1]
+        return [-1]`,
+      optimalScore: 100,
+      suboptimalScore: 38,
+      optimalBreakdown: { opt: '35 / 35', time: '25 / 25 (O(N))', space: '20 / 20 (O(1))' },
+      suboptimalBreakdown: { opt: '14 / 35', time: '7 / 25 (O(N²))', space: '10 / 20 (O(1))' },
+      optimalInsight: 'Two-pointer sliding window expands the right pointer and contracts the left in amortized O(N) operations without redundant summing.',
+      suboptimalInsight: 'Nested for-loops compute subarray sums in O(N²) quadratic time, triggering Time Limit Exceeded (TLE) on arrays where N = 10⁵.',
+      hints: {
+        1: 'Since all array integers are non-negative, expanding the window strictly increases the sum and contracting it strictly decreases the sum.',
+        2: 'Maintain a running window sum between two pointers left and right instead of recomputing from scratch.',
+        3: 'While curr_sum > s and left < right, subtract arr[left] and advance left. When curr_sum == s, return 1-based indices.'
+      }
+    }
+  };
+
+  const activeBrowser = browserData[browserPlatform];
 
   return (
     <div className="relative min-h-screen text-[#f0f6fc] overflow-hidden -mt-6">
@@ -107,7 +206,7 @@ export default function HomePage() {
           <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-[#161b22]/90 border border-[#30363d] backdrop-blur-md shadow-lg shadow-[#4285F4]/10">
             <span className="flex h-2 w-2 rounded-full bg-[#34A853] animate-pulse" />
             <span className="text-xs font-semibold text-[#8b949e]">
-              Powered by <span className="text-[#4285F4] font-bold">Google Gemini 3.8 Flash</span> &bull; Dual-Engine Co-Pilot
+              Powered by <span className="text-[#4285F4] font-bold">Google Gemini 3.8 Flash</span> &bull; Dual-Engine Experience
             </span>
           </div>
 
@@ -132,7 +231,7 @@ export default function HomePage() {
         {/* DUAL-EXTENSION INTERACTIVE DEMONSTRATION SHOWCASE */}
         <div className="space-y-6 max-w-6xl mx-auto">
           {/* Main Environment Tabs (Browser vs VS Code) */}
-          <div className="flex flex-col sm:flex-row items-center justify-between gap-4 p-2 rounded-2xl bg-[#161b22] border border-[#30363d] backdrop-blur-md">
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-4 p-2 rounded-2xl bg-[#161b22] border border-[#30363d] backdrop-blur-md shadow-lg">
             <div className="flex items-center gap-2 w-full sm:w-auto">
               <button
                 onClick={() => setDemoEnv('browser')}
@@ -169,7 +268,7 @@ export default function HomePage() {
                     : 'text-[#8b949e] hover:text-[#f0f6fc]'
                 }`}
               >
-                Suboptimal (42/100)
+                Suboptimal Approach
               </button>
               <button
                 onClick={() => setDemoApproach('optimal')}
@@ -179,10 +278,18 @@ export default function HomePage() {
                     : 'text-[#8b949e] hover:text-[#f0f6fc]'
                 }`}
               >
-                Optimal Solution (100/100)
+                Optimal Solution (100)
               </button>
             </div>
           </div>
+
+          {/* Interactive Analysis Toast if Triggered */}
+          {analyzeSuccessToast && (
+            <div className="p-3 rounded-xl bg-[#34A853]/20 border border-[#34A853] text-[#34A853] text-xs font-semibold text-center animate-in fade-in flex items-center justify-center gap-2">
+              <CheckCircle2 className="w-4 h-4" />
+              <span>{analyzeSuccessToast}</span>
+            </div>
+          )}
 
           {/* ========================================================================= */}
           {/* DEMO ENVIRONMENT A: BROWSER EXTENSION (LeetCode / GeeksforGeeks)          */}
@@ -199,18 +306,17 @@ export default function HomePage() {
                   </div>
                   <div className="flex items-center gap-2 px-3 py-1 rounded-lg bg-[#161b22] border border-[#30363d] text-xs font-mono text-[#8b949e] max-w-sm sm:max-w-md truncate">
                     <Globe className="w-3 h-3 text-[#34A853]" />
-                    <span>
-                      {browserPlatform === 'leetcode'
-                        ? 'https://leetcode.com/problems/two-sum/'
-                        : 'https://practice.geeksforgeeks.org/problems/subarray-with-given-sum/'}
-                    </span>
+                    <span>{activeBrowser.url}</span>
                   </div>
                 </div>
 
                 {/* Platform Toggle */}
                 <div className="flex items-center gap-1 bg-[#161b22] p-1 rounded-lg border border-[#30363d]">
                   <button
-                    onClick={() => setBrowserPlatform('leetcode')}
+                    onClick={() => {
+                      setBrowserPlatform('leetcode');
+                      setSelectedHint(1);
+                    }}
                     className={`px-2.5 py-0.5 rounded text-[11px] font-semibold transition cursor-pointer ${
                       browserPlatform === 'leetcode'
                         ? 'bg-[#FBBC05] text-[#0d1117]'
@@ -220,7 +326,10 @@ export default function HomePage() {
                     LeetCode #1
                   </button>
                   <button
-                    onClick={() => setBrowserPlatform('gfg')}
+                    onClick={() => {
+                      setBrowserPlatform('gfg');
+                      setSelectedHint(1);
+                    }}
                     className={`px-2.5 py-0.5 rounded text-[11px] font-semibold transition cursor-pointer ${
                       browserPlatform === 'gfg'
                         ? 'bg-[#34A853] text-white'
@@ -241,60 +350,59 @@ export default function HomePage() {
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2">
                         <span className="text-sm font-bold text-[#f0f6fc]">
-                          {browserPlatform === 'leetcode' ? '1. Two Sum' : 'Subarray with Given Sum'}
+                          {activeBrowser.title}
                         </span>
                         <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-[#34A853]/15 text-[#34A853] border border-[#34A853]/30">
-                          Easy
+                          {browserPlatform === 'leetcode' ? 'Easy' : 'Medium'}
                         </span>
                       </div>
                       <span className="text-[10px] font-mono text-[#8b949e]">
-                        {browserPlatform === 'leetcode' ? 'Monaco Engine Attached' : 'Ace Editor Injected'}
+                        {activeBrowser.engine}
                       </span>
                     </div>
                     <p className="text-xs text-[#8b949e] leading-relaxed">
-                      {browserPlatform === 'leetcode'
-                        ? 'Given an array of integers nums and an integer target, return indices of the two numbers such that they add up to target.'
-                        : 'Given an unsorted array of non-negative integers, find a continuous sub-array which adds to a given number S.'}
+                      {activeBrowser.description}
                     </p>
                   </div>
 
                   {/* Monaco / Ace Code Window */}
                   <div className="space-y-2 relative">
                     <div className="flex items-center justify-between text-xs text-[#8b949e] px-1">
-                      <span className="font-mono text-[11px]">solution.py (Monaco Editor Buffer)</span>
+                      <span className="font-mono text-[11px]">
+                        {browserPlatform === 'leetcode' ? 'Monaco Editor Model (Python 3)' : 'Ace Editor Model (Python 3)'}
+                      </span>
                       <span className="px-2 py-0.5 rounded bg-[#21262d] text-[#4285F4] text-[10px] font-mono">
-                        {demoApproach === 'optimal' ? 'Hash Map Single-Pass O(N)' : 'Nested Loops O(N²)'}
+                        {demoApproach === 'optimal' ? 'Optimal Strategy' : 'Suboptimal Strategy'}
                       </span>
                     </div>
 
                     <div className="relative group">
                       <pre className="p-4 rounded-xl bg-[#0d1117] border border-[#30363d] font-mono text-xs text-[#c9d1d9] overflow-x-auto leading-relaxed">
                         {demoApproach === 'optimal'
-                          ? `class Solution:
-    def twoSum(self, nums: List[int], target: int) -> List[int]:
-        # Optimal O(N) Time, O(N) Space
-        seen = {}
-        for i, num in enumerate(nums):
-            diff = target - num
-            if diff in seen:
-                return [seen[diff], i]
-            seen[num] = i
-        return []`
-                          : `class Solution:
-    def twoSum(self, nums: List[int], target: int) -> List[int]:
-        # Suboptimal Brute Force: O(N²) Time, O(1) Space
-        n = len(nums)
-        for i in range(n):
-            for j in range(i + 1, n):
-                if nums[i] + nums[j] == target:
-                    return [i, j]
-        return []`}
+                          ? activeBrowser.optimalCode
+                          : activeBrowser.suboptimalCode}
                       </pre>
 
-                      {/* In-Page Floating Badge (Simulating Extension injected on LeetCode/GFG) */}
-                      <div className="absolute top-3 right-3 flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#4285F4] text-white text-xs font-semibold shadow-lg shadow-[#4285F4]/40 border border-white/20 animate-pulse pointer-events-none">
-                        <Zap className="w-3.5 h-3.5 fill-white" />
-                        <span>In-Page Widget Active</span>
+                      {/* Interactive In-Page Floating Badge (Click to simulate Analyze Code) */}
+                      <div className="absolute top-3 right-3 flex items-center gap-2">
+                        <button
+                          onClick={() => triggerMockAnalysis('Browser Extension')}
+                          disabled={isAnalyzing}
+                          className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#4285F4] hover:bg-[#3367D6] text-white text-xs font-semibold shadow-lg shadow-[#4285F4]/40 border border-white/20 transition cursor-pointer active:scale-95"
+                          title="Click to trigger in-page code analysis"
+                        >
+                          {isAnalyzing ? (
+                            <>
+                              <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                              <span>Analyzing...</span>
+                            </>
+                          ) : (
+                            <>
+                              <Zap className="w-3.5 h-3.5 fill-white" />
+                              <span>Analyze Code</span>
+                            </>
+                          )}
+                        </button>
                       </div>
                     </div>
                   </div>
@@ -319,7 +427,9 @@ export default function HomePage() {
                           : 'bg-[#FBBC05]/20 text-[#FBBC05] border border-[#FBBC05]/30'
                       }`}
                     >
-                      {demoApproach === 'optimal' ? 'Optimal (100)' : 'Suboptimal (42)'}
+                      {demoApproach === 'optimal'
+                        ? `Optimal (${activeBrowser.optimalScore})`
+                        : `Suboptimal (${activeBrowser.suboptimalScore})`}
                     </span>
                   </div>
 
@@ -329,7 +439,9 @@ export default function HomePage() {
                       <div className="flex justify-between text-[#8b949e] mb-1">
                         <span>Algorithmic Optimality (35 pts)</span>
                         <span className="text-[#f0f6fc] font-mono font-medium">
-                          {demoApproach === 'optimal' ? '35 / 35' : '15 / 35'}
+                          {demoApproach === 'optimal'
+                            ? activeBrowser.optimalBreakdown.opt
+                            : activeBrowser.suboptimalBreakdown.opt}
                         </span>
                       </div>
                       <div className="h-1.5 w-full bg-[#21262d] rounded-full overflow-hidden">
@@ -344,7 +456,9 @@ export default function HomePage() {
                       <div className="flex justify-between text-[#8b949e] mb-1">
                         <span>Time Complexity (25 pts)</span>
                         <span className="text-[#f0f6fc] font-mono font-medium">
-                          {demoApproach === 'optimal' ? '25 / 25 (O(N))' : '8 / 25 (O(N²))'}
+                          {demoApproach === 'optimal'
+                            ? activeBrowser.optimalBreakdown.time
+                            : activeBrowser.suboptimalBreakdown.time}
                         </span>
                       </div>
                       <div className="h-1.5 w-full bg-[#21262d] rounded-full overflow-hidden">
@@ -359,7 +473,9 @@ export default function HomePage() {
                       <div className="flex justify-between text-[#8b949e] mb-1">
                         <span>Auxiliary Space Efficiency (20 pts)</span>
                         <span className="text-[#f0f6fc] font-mono font-medium">
-                          {demoApproach === 'optimal' ? '20 / 20 (O(N))' : '10 / 20 (O(1))'}
+                          {demoApproach === 'optimal'
+                            ? activeBrowser.optimalBreakdown.space
+                            : activeBrowser.suboptimalBreakdown.space}
                         </span>
                       </div>
                       <div className="h-1.5 w-full bg-[#21262d] rounded-full overflow-hidden">
@@ -376,8 +492,8 @@ export default function HomePage() {
                     <span className="text-[#f0f6fc] font-semibold">Gemini Approach Evaluation: </span>
                     <p className="leading-relaxed">
                       {demoApproach === 'optimal'
-                        ? 'Single-pass hash table stores complements in O(1) amortized lookup. Reaches the theoretical lower bound for 2-element sum.'
-                        : 'Quadratic nested loops result in O(N²) time complexity, which causes Time Limit Exceeded (TLE) on large test inputs.'}
+                        ? activeBrowser.optimalInsight
+                        : activeBrowser.suboptimalInsight}
                     </p>
                   </div>
 
@@ -424,21 +540,7 @@ export default function HomePage() {
                     </div>
 
                     <div className="p-2.5 rounded-lg bg-[#161b22] border border-[#30363d] text-[11px] text-[#c9d1d9] leading-relaxed">
-                      {selectedHint === 1 && (
-                        <span>
-                          💡 <strong>Tier 1 Observation:</strong> For every number <code className="text-[#4285F4]">x</code>, the required match is exactly <code className="text-[#4285F4]">target - x</code>. Can you find it in faster than O(N) scans?
-                        </span>
-                      )}
-                      {selectedHint === 2 && (
-                        <span>
-                          💡 <strong>Tier 2 Data Structure:</strong> Use a Hash Map to trade O(N) auxiliary space for immediate O(1) complement lookups.
-                        </span>
-                      )}
-                      {selectedHint === 3 && (
-                        <span>
-                          💡 <strong>Tier 3 Strategy:</strong> Populate your hash map dynamically in a single pass as you iterate so you never match a number with itself.
-                        </span>
-                      )}
+                      <span>💡 <strong>Tier {selectedHint}:</strong> {activeBrowser.hints[selectedHint as 1 | 2 | 3]}</span>
                     </div>
                   </div>
                 </div>
@@ -497,7 +599,7 @@ export default function HomePage() {
                         <span>solution.py</span>
                       </div>
                       <span className="text-[10px] text-[#8b949e] font-mono">
-                        workspace &gt; leetcode &gt; solution.py
+                        workspace &gt; algorithms &gt; solution.py
                       </span>
                     </div>
 
@@ -505,7 +607,7 @@ export default function HomePage() {
                     <div className="relative">
                       {codeInserted && (
                         <div className="absolute top-2 right-2 px-3 py-1 rounded-lg bg-[#34A853]/20 border border-[#34A853] text-[#34A853] text-[11px] font-mono animate-in fade-in">
-                          &check; Optimal code inserted into editor buffer!
+                          &check; Optimal code inserted into active buffer!
                         </div>
                       )}
 
@@ -513,7 +615,7 @@ export default function HomePage() {
                         {demoApproach === 'optimal'
                           ? `1   class Solution:
 2       def twoSum(self, nums: List[int], target: int) -> List[int]:
-3           # [AlgoPulse Optimal O(N) Hash Table]
+3           # [AlgoPulse Optimal O(N) Hash Table - Inserted!]
 4           lookup = {}
 5           for index, val in enumerate(nums):
 6               diff = target - val
@@ -536,7 +638,7 @@ export default function HomePage() {
 
                   {/* Bottom Editor Shortcut Pill */}
                   <div className="pt-4 border-t border-[#21262d] flex items-center justify-between text-[11px] text-[#8b949e]">
-                    <span>Press <kbd className="px-1.5 py-0.5 rounded bg-[#21262d] text-[#f0f6fc] font-mono">Ctrl+Alt+A</kbd> to analyze active file</span>
+                    <span>Hit <kbd className="px-1.5 py-0.5 rounded bg-[#21262d] text-[#f0f6fc] font-mono">Ctrl+Alt+A</kbd> to analyze</span>
                     <span className="text-[#34A853]">Python 3.11 &bull; UTF-8</span>
                   </div>
                 </div>
@@ -551,9 +653,15 @@ export default function HomePage() {
                           AlgoPulse Webview
                         </span>
                       </div>
-                      <span className="px-2 py-0.5 rounded text-[10px] font-mono bg-[#4285F4]/15 text-[#4285F4] border border-[#4285F4]/30">
-                        Sidebar View
-                      </span>
+                      <button
+                        onClick={() => triggerMockAnalysis('VS Code Extension')}
+                        disabled={isAnalyzing}
+                        className="px-2 py-1 rounded text-[10px] font-mono bg-[#4285F4]/15 hover:bg-[#4285F4]/30 text-[#4285F4] border border-[#4285F4]/30 transition flex items-center gap-1 cursor-pointer"
+                        title="Re-run analysis for active editor"
+                      >
+                        <RefreshCw className={`w-3 h-3 ${isAnalyzing ? 'animate-spin' : ''}`} />
+                        <span>Run Ctrl+Alt+A</span>
+                      </button>
                     </div>
 
                     {/* Score Overview */}
@@ -569,8 +677,8 @@ export default function HomePage() {
                         </span>
                       </div>
                       <div className="text-[11px] text-[#8b949e] flex justify-between">
-                        <span>Time: {demoApproach === 'optimal' ? 'O(N)' : 'O(N²)'}</span>
-                        <span>Space: {demoApproach === 'optimal' ? 'O(N)' : 'O(1)'}</span>
+                        <span>Time: {demoApproach === 'optimal' ? 'O(N) Linear' : 'O(N²) Quadratic'}</span>
+                        <span>Space: {demoApproach === 'optimal' ? 'O(N) Hash Map' : 'O(1) Auxiliary'}</span>
                       </div>
                     </div>
 
@@ -607,18 +715,54 @@ export default function HomePage() {
                       </div>
                     </div>
 
-                    {/* VS Code Special 1-Click Action: Insert Optimal Code into Editor */}
-                    <div className="pt-2">
+                    {/* Progressive Hints Tabs in VS Code */}
+                    <div className="space-y-1.5 pt-1">
+                      <div className="flex items-center justify-between text-[11px] text-[#8b949e]">
+                        <span className="font-semibold text-[#f0f6fc]">Progressive Guidance</span>
+                        <span>Tier {selectedHint}</span>
+                      </div>
+                      <div className="grid grid-cols-3 gap-1">
+                        {[1, 2, 3].map((tier) => (
+                          <button
+                            key={tier}
+                            onClick={() => setSelectedHint(tier)}
+                            className={`py-1 rounded text-[10px] font-medium transition cursor-pointer ${
+                              selectedHint === tier
+                                ? 'bg-[#4285F4] text-white'
+                                : 'bg-[#0d1117] text-[#8b949e] hover:text-[#f0f6fc]'
+                            }`}
+                          >
+                            Tier {tier}
+                          </button>
+                        ))}
+                      </div>
+                      <div className="p-2 rounded bg-[#0d1117] border border-[#30363d] text-[11px] text-[#c9d1d9] leading-relaxed">
+                        {selectedHint === 1 && '💡 Invariant: Notice that target - num must already exist in our previous seen set.'}
+                        {selectedHint === 2 && '💡 Data Structure: A dictionary provides O(1) amortized lookup to eliminate nested loops.'}
+                        {selectedHint === 3 && '💡 Implementation: Return [lookup[diff], i] when the complement is found.'}
+                      </div>
+                    </div>
+
+                    {/* VS Code Special Action Buttons */}
+                    <div className="pt-2 flex items-center gap-2">
                       <button
                         onClick={handleInsertCode}
-                        className="w-full py-2.5 px-3 rounded-xl bg-[#34A853] hover:bg-[#2e944b] text-white text-xs font-semibold shadow-md shadow-[#34A853]/25 transition flex items-center justify-center gap-2 cursor-pointer active:scale-95"
+                        className="flex-1 py-2 px-3 rounded-xl bg-[#34A853] hover:bg-[#2e944b] text-white text-xs font-semibold shadow-md shadow-[#34A853]/25 transition flex items-center justify-center gap-1.5 cursor-pointer active:scale-95"
                       >
-                        <CheckCheck className="w-4 h-4" />
-                        <span>Insert Optimal Code into Editor</span>
+                        <CheckCheck className="w-3.5 h-3.5" />
+                        <span>Insert Optimal Code</span>
                       </button>
-                      <p className="text-[10px] text-[#8b949e] text-center mt-1.5">
-                        Directly modifies active buffer in your VS Code session
-                      </p>
+
+                      {demoApproach === 'optimal' && (
+                        <button
+                          onClick={handleResetVsCode}
+                          className="py-2 px-2.5 rounded-xl bg-[#21262d] hover:bg-[#30363d] text-[#8b949e] hover:text-[#f0f6fc] border border-[#30363d] text-xs font-medium transition flex items-center gap-1 cursor-pointer"
+                          title="Reset editor buffer to suboptimal"
+                        >
+                          <RotateCcw className="w-3.5 h-3.5" />
+                          <span>Reset</span>
+                        </button>
+                      )}
                     </div>
                   </div>
 

@@ -94,7 +94,7 @@ export default function DedicatedDashboardPage() {
     recentTrend: [],
     heatmap: [],
     streaks: { currentStreak: 0, longestStreak: 0, totalActiveDays: 0 },
-    platformCounts: { leetcode: 0, geeksforgeeks: 0, hackerrank: 0, other: 0 },
+    platformCounts: { leetcode: 0, geeksforgeeks: 0, hackerrank: 0, vscode: 0, other: 0 },
     topParadigms: []
   };
 
@@ -109,6 +109,7 @@ export default function DedicatedDashboardPage() {
     safeAnalytics.platformCounts.leetcode +
     safeAnalytics.platformCounts.geeksforgeeks +
     safeAnalytics.platformCounts.hackerrank +
+    safeAnalytics.platformCounts.vscode +
     safeAnalytics.platformCounts.other || 1;
 
   const displayName = profile?.display_name || user?.email?.split('@')[0] || 'Developer';
@@ -376,8 +377,21 @@ export default function DedicatedDashboardPage() {
                 </div>
                 <div className="h-1.5 w-full bg-[#21262d] rounded-full overflow-hidden">
                   <div
-                    className="h-full bg-[#4285F4] rounded-full"
+                    className="h-full bg-[#EA4335] rounded-full"
                     style={{ width: `${(safeAnalytics.platformCounts.hackerrank / totalPlatforms) * 100}%` }}
+                  />
+                </div>
+              </div>
+
+              <div>
+                <div className="flex justify-between text-[#8b949e] mb-1">
+                  <span className="text-[#f0f6fc] font-medium">VS Code Desktop</span>
+                  <span>{safeAnalytics.platformCounts.vscode} ({Math.round((safeAnalytics.platformCounts.vscode / totalPlatforms) * 100)}%)</span>
+                </div>
+                <div className="h-1.5 w-full bg-[#21262d] rounded-full overflow-hidden">
+                  <div
+                    className="h-full bg-[#4285F4] rounded-full"
+                    style={{ width: `${(safeAnalytics.platformCounts.vscode / totalPlatforms) * 100}%` }}
                   />
                 </div>
               </div>
@@ -400,7 +414,7 @@ export default function DedicatedDashboardPage() {
               </div>
             ) : (
               <p className="text-xs text-[#8b949e]">
-                Evaluate more problems on LeetCode/GFG to uncover your dominant algorithmic patterns.
+                Evaluate more problems on LeetCode/GFG/VS Code to uncover your dominant algorithmic patterns.
               </p>
             )}
           </div>
@@ -427,7 +441,7 @@ export default function DedicatedDashboardPage() {
           <div className="py-12 text-center text-xs text-[#8b949e] border border-dashed border-[#30363d] rounded-xl space-y-2">
             <Code2 className="w-6 h-6 text-[#8b949e] mx-auto" />
             <p>No submissions recorded yet.</p>
-            <p className="text-[11px]">Open LeetCode, GeeksforGeeks, or HackerRank and click &quot;Analyze Code&quot;!</p>
+            <p className="text-[11px]">Open LeetCode, GeeksforGeeks, or VS Code and analyze your code!</p>
           </div>
         ) : (
           <div className="divide-y divide-[#30363d]/60">
@@ -444,6 +458,8 @@ export default function DedicatedDashboardPage() {
                   ? 'GFG'
                   : sub.platform === 'hackerrank'
                   ? 'HackerRank'
+                  : sub.platform === 'vscode'
+                  ? 'VS Code'
                   : 'LeetCode';
 
               return (

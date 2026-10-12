@@ -57,6 +57,7 @@ export interface AnalyticsSummary {
     leetcode: number;
     geeksforgeeks: number;
     hackerrank: number;
+    vscode: number;
     other: number;
   };
   recentTrend: Array<{

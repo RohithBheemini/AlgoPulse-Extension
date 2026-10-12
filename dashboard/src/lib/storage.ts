@@ -468,6 +468,7 @@ export async function getAnalyticsSummary(userId?: string): Promise<AnalyticsSum
     leetcode: 0,
     geeksforgeeks: 0,
     hackerrank: 0,
+    vscode: 0,
     other: 0
   };
 
@@ -476,6 +477,7 @@ export async function getAnalyticsSummary(userId?: string): Promise<AnalyticsSum
     if (p.includes('leetcode')) platformCounts.leetcode++;
     else if (p.includes('geeksforgeeks') || p.includes('gfg')) platformCounts.geeksforgeeks++;
     else if (p.includes('hackerrank')) platformCounts.hackerrank++;
+    else if (p.includes('vscode')) platformCounts.vscode++;
     else platformCounts.other++;
   });
 
