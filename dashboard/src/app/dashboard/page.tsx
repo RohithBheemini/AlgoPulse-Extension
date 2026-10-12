@@ -16,7 +16,10 @@ import {
   Cpu,
   ExternalLink,
   Flame,
-  CheckCircle2
+  CheckCircle2,
+  Key,
+  Copy,
+  Check
 } from 'lucide-react';
 import { AnalyticsSummary, SubmissionRecord } from '@/lib/types';
 import { ScoreTrendChart } from '@/components/AnalyticsCharts';
@@ -30,6 +33,7 @@ export default function DedicatedDashboardPage() {
   const [loading, setLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [lastUpdated, setLastUpdated] = useState<Date>(new Date());
+  const [copiedToken, setCopiedToken] = useState(false);
 
   const fetchData = useCallback(async (isManual = false) => {
     if (isManual) setIsRefreshing(true);
@@ -108,6 +112,13 @@ export default function DedicatedDashboardPage() {
     safeAnalytics.platformCounts.other || 1;
 
   const displayName = profile?.display_name || user?.email?.split('@')[0] || 'Developer';
+  const token = profile?.extension_token || 'ap_sec_9a7b3e1f0c4d2e8';
+
+  const copyToken = () => {
+    navigator.clipboard.writeText(token);
+    setCopiedToken(true);
+    setTimeout(() => setCopiedToken(false), 2000);
+  };
 
   return (
     <div className="space-y-8 animate-in fade-in duration-300">
@@ -155,6 +166,53 @@ export default function DedicatedDashboardPage() {
               <ChevronRight className="w-3.5 h-3.5" />
             </Link>
           </div>
+        </div>
+      </div>
+
+      {/* Quick-Access Extension Token Bar */}
+      <div className="rounded-2xl bg-[#161b22] border border-[#30363d] p-4 sm:p-5 flex flex-col md:flex-row items-center justify-between gap-4 shadow-sm hover:border-[#FBBC05]/40 transition">
+        <div className="flex items-center gap-3.5 w-full md:w-auto">
+          <div className="p-2.5 rounded-xl bg-[#FBBC05]/15 text-[#FBBC05] border border-[#FBBC05]/30 shrink-0">
+            <Key className="w-4 h-4" />
+          </div>
+          <div className="space-y-0.5">
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="text-xs font-bold text-[#f0f6fc]">Your Extension Sync Token:</span>
+              <span className="px-2 py-0.5 rounded bg-[#21262d] text-[#FBBC05] text-[11px] font-mono font-medium border border-[#30363d] select-all">
+                {token}
+              </span>
+            </div>
+            <p className="text-[11px] text-[#8b949e]">
+              Paste into Chrome Extension popup or VS Code Extension settings (<code className="text-[#c9d1d9]">algopulse.apiToken</code>) to sync submissions automatically.
+            </p>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-2.5 w-full md:w-auto shrink-0 justify-end">
+          <button
+            onClick={copyToken}
+            className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-[#21262d] hover:bg-[#30363d] text-[#f0f6fc] border border-[#30363d] text-xs font-medium transition cursor-pointer"
+          >
+            {copiedToken ? (
+              <>
+                <Check className="w-3.5 h-3.5 text-[#34A853]" />
+                <span className="text-[#34A853] font-semibold">Copied!</span>
+              </>
+            ) : (
+              <>
+                <Copy className="w-3.5 h-3.5 text-[#8b949e]" />
+                <span>Copy Token</span>
+              </>
+            )}
+          </button>
+
+          <Link
+            href="/submissions"
+            className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-[#21262d] hover:bg-[#30363d] text-[#8b949e] hover:text-[#f0f6fc] border border-[#30363d] text-xs font-medium transition"
+          >
+            <Code2 className="w-3.5 h-3.5 text-[#34A853]" />
+            <span>Submissions ({submissions.length})</span>
+          </Link>
         </div>
       </div>
 
