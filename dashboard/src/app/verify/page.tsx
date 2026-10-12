@@ -19,17 +19,23 @@ import {
 } from 'lucide-react';
 import { AnalyticsSummary, SubmissionRecord } from '@/lib/types';
 import { SubmissionHeatmap } from '@/components/SubmissionHeatmap';
+import { useAuth } from '@/components/AuthProvider';
 
 export default function VerifiedPortfolioPage() {
+  const { user } = useAuth();
   const [analytics, setAnalytics] = useState<AnalyticsSummary | null>(null);
   const [submissions, setSubmissions] = useState<SubmissionRecord[]>([]);
   const [loading, setLoading] = useState(true);
   const [copiedLink, setCopiedLink] = useState(false);
 
   useEffect(() => {
+    const urlParams = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : null;
+    const targetUserId = urlParams?.get('userId') || user?.id || '';
+    const userParam = targetUserId ? `?userId=${encodeURIComponent(targetUserId)}` : '';
+
     Promise.all([
-      fetch('/api/analytics', { cache: 'no-store' }).then((r) => r.json()),
-      fetch('/api/submissions', { cache: 'no-store' }).then((r) => r.json())
+      fetch(`/api/analytics${userParam}`, { cache: 'no-store' }).then((r) => r.json()),
+      fetch(`/api/submissions${userParam}`, { cache: 'no-store' }).then((r) => r.json())
     ])
       .then(([analyticsData, subsData]) => {
         setAnalytics(analyticsData);
@@ -37,7 +43,7 @@ export default function VerifiedPortfolioPage() {
       })
       .catch((err) => console.warn('Could not load portfolio data:', err))
       .finally(() => setLoading(false));
-  }, []);
+  }, [user?.id]);
 
   const copyPublicLink = () => {
     if (typeof window !== 'undefined') {
@@ -59,7 +65,7 @@ export default function VerifiedPortfolioPage() {
     heatmap: [],
     streaks: { currentStreak: 0, longestStreak: 0, totalActiveDays: 0 },
     topParadigms: [],
-    readinessScore: 78,
+    readinessScore: 0,
     paradigmMatrix: [],
     spacedReviewQueue: []
   };
@@ -116,12 +122,22 @@ export default function VerifiedPortfolioPage() {
               </span>
               <div className="flex items-baseline justify-center gap-1">
                 <span className="text-4xl font-black text-[#34A853]">
-                  {safeAnalytics.readinessScore || 78}%
+                  {safeAnalytics.readinessScore ?? 0}%
                 </span>
                 <span className="text-xs text-[#8b949e]">Index</span>
               </div>
-              <span className="text-[10px] px-2 py-0.5 rounded-full bg-[#34A853]/15 text-[#34A853] font-semibold border border-[#34A853]/30 block">
-                FAANG Interview Qualified
+              <span className={`text-[10px] px-2 py-0.5 rounded-full font-semibold border block ${
+                (safeAnalytics.readinessScore ?? 0) >= 80
+                  ? 'bg-[#34A853]/15 text-[#34A853] border-[#34A853]/30'
+                  : (safeAnalytics.readinessScore ?? 0) >= 50
+                  ? 'bg-[#FBBC05]/15 text-[#FBBC05] border-[#FBBC05]/30'
+                  : 'bg-[#8b949e]/15 text-[#8b949e] border-[#8b949e]/30'
+              }`}>
+                {(safeAnalytics.readinessScore ?? 0) >= 80
+                  ? 'FAANG Interview Qualified'
+                  : (safeAnalytics.readinessScore ?? 0) >= 50
+                  ? 'Practicing & Refining'
+                  : 'Awaiting Evaluations'}
               </span>
             </div>
 
@@ -237,49 +253,57 @@ export default function VerifiedPortfolioPage() {
           <span className="text-xs text-[#8b949e]">{submissions.length} Total Evaluated</span>
         </div>
 
-        <div className="divide-y divide-[#30363d]/50">
-          {submissions.map((sub) => (
-            <div
-              key={sub.id}
-              className="py-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 hover:bg-[#21262d]/30 px-2 rounded-xl transition"
-            >
-              <div className="space-y-1">
-                <div className="flex items-center gap-2">
+        {submissions.length === 0 ? (
+          <div className="py-12 text-center text-xs text-[#8b949e] border border-dashed border-[#30363d] rounded-xl space-y-2">
+            <Code2 className="w-6 h-6 text-[#8b949e] mx-auto" />
+            <p className="font-semibold text-[#f0f6fc]">No verified submissions yet</p>
+            <p className="text-[11px]">Solve and analyze problems on LeetCode, GeeksforGeeks, or VS Code using AlgoPulse to populate your transcript.</p>
+          </div>
+        ) : (
+          <div className="divide-y divide-[#30363d]/50">
+            {submissions.map((sub) => (
+              <div
+                key={sub.id}
+                className="py-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 hover:bg-[#21262d]/30 px-2 rounded-xl transition"
+              >
+                <div className="space-y-1">
+                  <div className="flex items-center gap-2">
+                    <Link
+                      href={`/submissions/${sub.id}`}
+                      className="text-xs sm:text-sm font-bold text-[#f0f6fc] hover:text-[#4285F4] transition"
+                    >
+                      {sub.problem_title}
+                    </Link>
+                    <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-[#21262d] text-[#8b949e] uppercase font-mono">
+                      {sub.platform}
+                    </span>
+                  </div>
+                  <div className="text-[11px] text-[#8b949e] flex items-center gap-2">
+                    <span>Approach: <strong className="text-[#c9d1d9] font-normal">{sub.user_time_complexity}</strong></span>
+                    <span>&bull;</span>
+                    <span>{new Date(sub.created_at).toLocaleDateString()}</span>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-3">
+                  <span
+                    className={`text-sm font-bold ${
+                      sub.overall_score >= 80 ? 'text-[#34A853]' : 'text-[#FBBC05]'
+                    }`}
+                  >
+                    {sub.overall_score}/100
+                  </span>
                   <Link
                     href={`/submissions/${sub.id}`}
-                    className="text-xs sm:text-sm font-bold text-[#f0f6fc] hover:text-[#4285F4] transition"
+                    className="px-2.5 py-1 rounded-lg bg-[#21262d] hover:bg-[#30363d] text-[#c9d1d9] text-xs font-medium transition"
                   >
-                    {sub.problem_title}
+                    Inspect
                   </Link>
-                  <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-[#21262d] text-[#8b949e] uppercase font-mono">
-                    {sub.platform}
-                  </span>
-                </div>
-                <div className="text-[11px] text-[#8b949e] flex items-center gap-2">
-                  <span>Approach: <strong className="text-[#c9d1d9] font-normal">{sub.user_time_complexity}</strong></span>
-                  <span>&bull;</span>
-                  <span>{new Date(sub.created_at).toLocaleDateString()}</span>
                 </div>
               </div>
-
-              <div className="flex items-center gap-3">
-                <span
-                  className={`text-sm font-bold ${
-                    sub.overall_score >= 80 ? 'text-[#34A853]' : 'text-[#FBBC05]'
-                  }`}
-                >
-                  {sub.overall_score}/100
-                </span>
-                <Link
-                  href={`/submissions/${sub.id}`}
-                  className="px-2.5 py-1 rounded-lg bg-[#21262d] hover:bg-[#30363d] text-[#c9d1d9] text-xs font-medium transition"
-                >
-                  Inspect
-                </Link>
-              </div>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );

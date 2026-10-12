@@ -32,187 +32,18 @@ function getSupabaseInstance() {
 const dataDir = path.resolve(process.cwd(), 'data');
 const localFilePath = path.resolve(dataDir, 'submissions.json');
 
-const INITIAL_SEED_DATA: SubmissionRecord[] = [
-  {
-    id: 'sub_seed_1',
-    problem_title: 'Two Sum',
-    problem_slug: 'two-sum',
-    platform: 'leetcode',
-    difficulty: 'Easy',
-    language: 'python3',
-    user_code: `class Solution:
-    def twoSum(self, nums: List[int], target: int) -> List[int]:
-        lookup = {}
-        for i, num in enumerate(nums):
-            diff = target - num
-            if diff in lookup:
-                return [lookup[diff], i]
-            lookup[num] = i
-        return []`,
-    overall_score: 95,
-    optimality_score: 35,
-    time_score: 25,
-    space_score: 18,
-    cleanliness_score: 17,
-    user_time_complexity: 'Hash Map Single-Pass (O(N))',
-    user_space_complexity: 'O(N)',
-    optimal_time_complexity: 'Hash Map Single-Pass (O(N))',
-    optimal_space_complexity: 'O(N)',
-    why_suboptimal: 'Your solution is already algorithmic perfection for an unsorted input array.',
-    why_ideal: 'Single-pass hash table achieves immediate O(1) amortized lookup per element while indexing simultaneously.',
-    summary_feedback: 'Optimal single-pass hash map approach. Excellent algorithmic strategy.',
-    improvements: [
-      'Type annotations are clean and idiomatic.',
-      'Consider handling edge case where array has fewer than 2 elements.'
-    ],
-    optimal_code: `class Solution:
-    def twoSum(self, nums: List[int], target: int) -> List[int]:
-        seen = {}
-        for i, val in enumerate(nums):
-            needed = target - val
-            if needed in seen:
-                return [seen[needed], i]
-            seen[val] = i
-        return []`,
-    follow_up_questions: [
-      {
-        question: 'What if the input array is already sorted? Can we achieve strict O(1) auxiliary space?',
-        category: 'Constraint',
-        answer: 'Yes! Use a Two-Pointer inward scan with left=0 and right=n-1. If nums[left] + nums[right] < target, advance left; if greater, decrement right. This eliminates the hash table, achieving O(N) time with strict O(1) auxiliary space.'
-      },
-      {
-        question: 'What if the dataset contains 10^10 elements and exceeds single-machine RAM?',
-        category: 'Scale',
-        answer: 'Apply distributed range-partitioning or hash-sharding (e.g., Apache Spark). Hash-partition elements into bucket nodes so that any element x and its target - x pair are routed to deterministic paired workers.'
-      }
-    ],
-    created_at: new Date(Date.now() - 3 * 86400000).toISOString()
-  },
-  {
-    id: 'sub_seed_2',
-    problem_title: 'Longest Substring Without Repeating Characters',
-    problem_slug: 'longest-substring-without-repeating-characters',
-    platform: 'leetcode',
-    difficulty: 'Medium',
-    language: 'python3',
-    user_code: `class Solution:
-    def lengthOfLongestSubstring(self, s: str) -> int:
-        seen = set()
-        left = 0
-        ans = 0
-        for right in range(len(s)):
-            while s[right] in seen:
-                seen.remove(s[left])
-                left += 1
-            seen.add(s[right])
-            ans = max(ans, right - left + 1)
-        return ans`,
-    overall_score: 90,
-    optimality_score: 34,
-    time_score: 24,
-    space_score: 16,
-    cleanliness_score: 16,
-    user_time_complexity: 'Sliding Window Set (O(N))',
-    user_space_complexity: 'O(min(M, N))',
-    optimal_time_complexity: 'Sliding Window Map (O(N))',
-    optimal_space_complexity: 'O(min(M, N))',
-    why_suboptimal: 'Using a set requires the left pointer to increment step-by-step to discard duplicates.',
-    why_ideal: 'Storing character index positions in a dictionary allows the left pointer to jump directly past duplicates in O(1) operations.',
-    summary_feedback: 'Sliding window technique implemented cleanly with set lookups.',
-    improvements: [
-      'You can optimize further by storing character index maps instead of sliding the left pointer one by one.'
-    ],
-    optimal_code: `class Solution:
-    def lengthOfLongestSubstring(self, s: str) -> int:
-        char_idx = {}
-        left = 0
-        longest = 0
-        for right, ch in enumerate(s):
-            if ch in char_idx and char_idx[ch] >= left:
-                left = char_idx[ch] + 1
-            char_idx[ch] = right
-            longest = max(longest, right - left + 1)
-        return longest`,
-    created_at: new Date(Date.now() - 2 * 86400000).toISOString()
-  },
-  {
-    id: 'sub_seed_3',
-    problem_title: 'Subarray with Given Sum',
-    problem_slug: 'subarray-with-given-sum',
-    platform: 'geeksforgeeks',
-    difficulty: 'Medium',
-    language: 'java',
-    user_code: `class Solution {
-    static ArrayList<Integer> subarraySum(int[] arr, int n, int s) {
-        int left = 0, current = 0;
-        for (int right = 0; right < n; right++) {
-            current += arr[right];
-            while (current > s && left < right) {
-                current -= arr[left++];
-            }
-            if (current == s) {
-                ArrayList<Integer> res = new ArrayList<>();
-                res.add(left + 1);
-                res.add(right + 1);
-                return res;
-            }
-        }
-        ArrayList<Integer> res = new ArrayList<>();
-        res.add(-1);
-        return res;
-    }
-}`,
-    overall_score: 94,
-    optimality_score: 34,
-    time_score: 24,
-    space_score: 18,
-    cleanliness_score: 18,
-    user_time_complexity: 'Sliding Window Two-Pointer (O(N))',
-    user_space_complexity: 'O(1)',
-    optimal_time_complexity: 'Sliding Window Two-Pointer (O(N))',
-    optimal_space_complexity: 'O(1)',
-    why_suboptimal: 'Solution is optimal for positive integer arrays.',
-    why_ideal: 'Sliding window maintains dynamic prefix sum in O(N) single-pass without nested loops.',
-    summary_feedback: 'Clean sliding window two-pointer approach implemented on GeeksforGeeks.',
-    improvements: [
-      'Handle zero-sum targets explicitly at the beginning.'
-    ],
-    optimal_code: `class Solution {
-    static ArrayList<Integer> subarraySum(int[] arr, int n, int s) {
-        int left = 0, current = 0;
-        for (int right = 0; right < n; right++) {
-            current += arr[right];
-            while (current > s && left < right) {
-                current -= arr[left++];
-            }
-            if (current == s) {
-                ArrayList<Integer> res = new ArrayList<>();
-                res.add(left + 1);
-                res.add(right + 1);
-                return res;
-            }
-        }
-        ArrayList<Integer> res = new ArrayList<>();
-        res.add(-1);
-        return res;
-    }
-}`,
-    created_at: new Date(Date.now() - 1 * 86400000).toISOString()
-  }
-];
-
 function readLocalSubmissions(): SubmissionRecord[] {
   try {
     if (!fs.existsSync(localFilePath)) {
-      writeLocalSubmissions(INITIAL_SEED_DATA);
-      return INITIAL_SEED_DATA;
+      writeLocalSubmissions([]);
+      return [];
     }
     const raw = fs.readFileSync(localFilePath, 'utf8');
     const parsed = JSON.parse(raw);
-    return Array.isArray(parsed) ? parsed : INITIAL_SEED_DATA;
+    return Array.isArray(parsed) ? parsed : [];
   } catch (err) {
     console.error('Error reading local submissions:', err);
-    return INITIAL_SEED_DATA;
+    return [];
   }
 }
 
@@ -231,56 +62,33 @@ export async function getAllSubmissions(userId?: string): Promise<SubmissionReco
   const supabase = getSupabaseInstance();
   if (supabase) {
     try {
-      let query = supabase
-        .from('submissions')
-        .select('*')
-        .order('created_at', { ascending: false });
-
       if (userId) {
-        // Query user-specific submissions
+        // Query user-specific submissions strictly
         const { data: userRecords, error: userError } = await supabase
           .from('submissions')
           .select('*')
           .eq('user_id', userId)
           .order('created_at', { ascending: false });
 
-        if (!userError && userRecords && userRecords.length > 0) {
+        if (!userError && userRecords) {
           return userRecords as SubmissionRecord[];
         }
-
-        // If user has none yet, also look for unassigned submissions (e.g. sent before token was configured)
-        const { data: unassigned, error: unassignedError } = await supabase
-          .from('submissions')
-          .select('*')
-          .is('user_id', null)
-          .order('created_at', { ascending: false });
-
-        if (!unassignedError && unassigned && unassigned.length > 0) {
-          return unassigned as SubmissionRecord[];
-        }
-
         return [];
-      }
-
-      const { data, error } = await query;
-
-      if (!error && data && data.length > 0) {
-        return data as SubmissionRecord[];
-      } else if (error) {
-        console.warn('Supabase query error:', error.message);
+      } else {
+        // If not logged in, return an empty array — never expose other users' private submissions
+        return [];
       }
     } catch (err) {
       console.warn('Supabase fetch failed, falling back to local storage:', err);
     }
   }
 
-  // Fallback to local storage
+  // Fallback to local storage strictly filtered by user
   const local = readLocalSubmissions();
   if (userId) {
-    const userSpecific = local.filter((s) => s.user_id === userId);
-    return userSpecific.length > 0 ? userSpecific : local;
+    return local.filter((s) => s.user_id === userId);
   }
-  return local;
+  return [];
 }
 
 export async function getSubmissionById(id: string): Promise<SubmissionRecord | null> {
@@ -603,8 +411,9 @@ function computeSpacedReviewQueue(submissions: SubmissionRecord[]): SpacedReview
 function computeReadinessScore(matrix: ParadigmSkill[]): number {
   const readyCount = matrix.filter((p) => p.status === 'Ready').length;
   const practicingCount = matrix.filter((p) => p.status === 'Practicing').length;
+  if (readyCount === 0 && practicingCount === 0) return 0;
   const raw = (readyCount * 6.5) + (practicingCount * 3.0);
-  return Math.min(100, Math.max(25, Math.round(raw)));
+  return Math.min(100, Math.round(raw));
 }
 
 export async function getAnalyticsSummary(userId?: string): Promise<AnalyticsSummary> {

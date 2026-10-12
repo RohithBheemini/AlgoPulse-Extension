@@ -117,8 +117,8 @@ export default function DedicatedDashboardPage() {
     safeAnalytics.platformCounts.vscode +
     safeAnalytics.platformCounts.other || 1;
 
-  const displayName = profile?.display_name || user?.email?.split('@')[0] || 'Developer';
-  const token = profile?.extension_token || 'ap_sec_9a7b3e1f0c4d2e8';
+  const displayName = profile?.display_name || user?.email?.split('@')[0] || (user ? 'Developer' : 'Guest');
+  const token = profile?.extension_token || (user ? `ap_sec_${user.id.replace(/-/g, '').substring(0, 16)}` : 'Sign in to generate token');
 
   const copyToken = () => {
     navigator.clipboard.writeText(token);
@@ -345,7 +345,7 @@ export default function DedicatedDashboardPage() {
               <div className="text-xs">
                 <span className="text-[#8b949e]">Tier-1 Readiness: </span>
                 <span className="font-extrabold text-[#34A853]">
-                  {safeAnalytics.readinessScore || 75}%
+                  {safeAnalytics.readinessScore}%
                 </span>
               </div>
             </div>

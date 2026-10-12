@@ -17,7 +17,7 @@ import { createClient } from '@/lib/supabase/client';
 
 export default function SettingsPage() {
   const { user, profile, refreshProfile } = useAuth();
-  const [token, setToken] = useState('ap_sec_9a7b3e1f0c4d2e8');
+  const [token, setToken] = useState('Loading token...');
   const [copiedToken, setCopiedToken] = useState(false);
   const [copiedSql, setCopiedSql] = useState(false);
   const [regenerating, setRegenerating] = useState(false);
@@ -27,13 +27,17 @@ export default function SettingsPage() {
   useEffect(() => {
     if (profile?.extension_token) {
       setToken(profile.extension_token);
+    } else if (user?.id) {
+      setToken(`ap_sec_${user.id.replace(/-/g, '').substring(0, 16)}`);
     } else {
       const saved = localStorage.getItem('algopulse_token');
       if (saved) {
         setToken(saved);
+      } else {
+        setToken('Sign in to generate token');
       }
     }
-  }, [profile]);
+  }, [profile, user?.id]);
 
   const handleGenerateNew = async () => {
     setRegenerating(true);

@@ -81,7 +81,7 @@ export default function HomePage() {
   const [isAnalyzing, setIsAnalyzing] = useState<boolean>(false);
   const [analyzeSuccessToast, setAnalyzeSuccessToast] = useState<string | null>(null);
 
-  const token = profile?.extension_token || 'ap_sec_9a7b3e1f0c4d2e8';
+  const token = profile?.extension_token || (user ? `ap_sec_${user.id.replace(/-/g, '').substring(0, 16)}` : 'Sign in to generate token');
 
   const handleCopyToken = () => {
     navigator.clipboard.writeText(token);

@@ -37,7 +37,7 @@ export default function ProfilePage() {
     }
   }, [user?.id]);
 
-  const token = profile?.extension_token || 'ap_sec_default';
+  const token = profile?.extension_token || (user ? `ap_sec_${user.id.replace(/-/g, '').substring(0, 16)}` : 'ap_sec_pending');
 
   const copyToken = () => {
     navigator.clipboard.writeText(token);
