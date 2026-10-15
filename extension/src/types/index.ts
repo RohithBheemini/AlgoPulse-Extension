@@ -41,14 +41,21 @@ export interface AIAnalysisResult {
   hints: [string, string, string]; // [Tier 1 Nudge, Tier 2 Pattern, Tier 3 Strategy]
   improvements: string[];
   optimal_code: string;
+  provider_used?: string;
+  model_used?: string;
 }
 
+export type AIProvider = 'auto' | 'gemini' | 'openai' | 'claude';
+
 export interface ExtensionSettings {
+  activeProvider: AIProvider;
   geminiApiKey: string;
+  openaiApiKey: string;
+  anthropicApiKey: string;
+  preferredModel?: string;
   dashboardUrl: string;
   extensionToken: string;
   autoSync: boolean;
-  preferredModel?: string;
 }
 
 export interface SyncSubmissionPayload {

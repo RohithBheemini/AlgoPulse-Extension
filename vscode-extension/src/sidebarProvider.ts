@@ -1,6 +1,6 @@
 import * as vscode from 'vscode';
-import { ProblemMetadata, AIAnalysisResult, ExtensionConfig, SyncSubmissionPayload } from './types';
-import { analyzeCodeWithGemini } from './analyzer';
+import { ProblemMetadata, AIAnalysisResult, ExtensionConfig, SyncSubmissionPayload, AIProvider } from './types';
+import { analyzeCodeWithMultiProvider } from './analyzer';
 import { syncSubmissionToDashboard } from './sync';
 
 export class AlgoPulseSidebarProvider implements vscode.WebviewViewProvider {
@@ -63,8 +63,17 @@ export class AlgoPulseSidebarProvider implements vscode.WebviewViewProvider {
         }
         case 'SAVE_SETTINGS': {
           const config = vscode.workspace.getConfiguration('algopulse');
+          if (data.settings.activeProvider !== undefined) {
+            await config.update('activeProvider', data.settings.activeProvider || 'auto', vscode.ConfigurationTarget.Global);
+          }
           if (data.settings.geminiApiKey !== undefined) {
             await config.update('geminiApiKey', data.settings.geminiApiKey, vscode.ConfigurationTarget.Global);
+          }
+          if (data.settings.openaiApiKey !== undefined) {
+            await config.update('openaiApiKey', data.settings.openaiApiKey, vscode.ConfigurationTarget.Global);
+          }
+          if (data.settings.anthropicApiKey !== undefined) {
+            await config.update('anthropicApiKey', data.settings.anthropicApiKey, vscode.ConfigurationTarget.Global);
           }
           if (data.settings.dashboardUrl !== undefined) {
             await config.update('dashboardUrl', data.settings.dashboardUrl, vscode.ConfigurationTarget.Global);
@@ -84,7 +93,10 @@ export class AlgoPulseSidebarProvider implements vscode.WebviewViewProvider {
           this.postMessage({
             type: 'INIT_CONFIG',
             config: {
+              activeProvider: config.get<string>('activeProvider') || 'auto',
               geminiApiKey: config.get<string>('geminiApiKey') || '',
+              openaiApiKey: config.get<string>('openaiApiKey') || '',
+              anthropicApiKey: config.get<string>('anthropicApiKey') || '',
               dashboardUrl: config.get<string>('dashboardUrl') || 'http://localhost:3000',
               extensionToken: config.get<string>('extensionToken') || '',
               autoSync: config.get<boolean>('autoSync') !== false,
@@ -142,27 +154,50 @@ export class AlgoPulseSidebarProvider implements vscode.WebviewViewProvider {
     };
 
     const config = vscode.workspace.getConfiguration('algopulse');
-    const apiKey = config.get<string>('geminiApiKey') || '';
+    const activeProvider = config.get<AIProvider>('activeProvider') || 'auto';
+    const geminiApiKey = config.get<string>('geminiApiKey') || '';
+    const openaiApiKey = config.get<string>('openaiApiKey') || '';
+    const anthropicApiKey = config.get<string>('anthropicApiKey') || '';
     const dashboardUrl = config.get<string>('dashboardUrl') || 'http://localhost:3000';
     const extensionToken = config.get<string>('extensionToken') || '';
     const autoSync = config.get<boolean>('autoSync') !== false;
     const preferredModel = config.get<string>('preferredModel') || 'auto';
 
-    if (!apiKey || apiKey.trim() === '') {
+    const extConfig: ExtensionConfig = {
+      activeProvider,
+      geminiApiKey,
+      openaiApiKey,
+      anthropicApiKey,
+      dashboardUrl,
+      extensionToken,
+      autoSync,
+      preferredModel
+    };
+
+    if (!geminiApiKey && !openaiApiKey && !anthropicApiKey) {
       this.postMessage({
         type: 'PROMPT_API_KEY',
-        message: 'Please configure your free Gemini API key to begin.'
+        message: 'Please configure at least one API key (Gemini, OpenAI, or Claude) in settings to begin.'
       });
       const inputKey = await vscode.window.showInputBox({
-        title: 'AlgoPulse: Gemini API Key Required',
-        prompt: 'Enter your free Google Gemini API Key from Google AI Studio',
-        placeHolder: 'AIzaSy...',
+        title: 'AlgoPulse: AI API Key Required',
+        prompt: 'Enter your Google Gemini, OpenAI, or Anthropic API Key',
+        placeHolder: 'AIzaSy... / sk-... / sk-ant-...',
         password: true,
         ignoreFocusOut: true
       });
       if (inputKey && inputKey.trim()) {
-        await config.update('geminiApiKey', inputKey.trim(), vscode.ConfigurationTarget.Global);
-        // re-run with new key
+        const trimmed = inputKey.trim();
+        if (trimmed.startsWith('sk-ant-')) {
+          await config.update('anthropicApiKey', trimmed, vscode.ConfigurationTarget.Global);
+          extConfig.anthropicApiKey = trimmed;
+        } else if (trimmed.startsWith('sk-')) {
+          await config.update('openaiApiKey', trimmed, vscode.ConfigurationTarget.Global);
+          extConfig.openaiApiKey = trimmed;
+        } else {
+          await config.update('geminiApiKey', trimmed, vscode.ConfigurationTarget.Global);
+          extConfig.geminiApiKey = trimmed;
+        }
         return this.runAnalysisForEditor(editor);
       } else {
         return;
@@ -182,7 +217,7 @@ export class AlgoPulseSidebarProvider implements vscode.WebviewViewProvider {
           cancellable: false
         },
         async () => {
-          return await analyzeCodeWithGemini(metadata, apiKey, preferredModel);
+          return await analyzeCodeWithMultiProvider(metadata, extConfig);
         }
       );
 
@@ -478,7 +513,7 @@ export class AlgoPulseSidebarProvider implements vscode.WebviewViewProvider {
   <div class="header">
     <div class="brand">
       <span>AlgoPulse</span>
-      <span class="brand-badge">Gemini AI</span>
+      <span class="brand-badge">Multi-AI</span>
     </div>
     <div style="display: flex; gap: 4px;">
       <button id="toggleSettingsBtn" class="btn btn-secondary" style="padding: 4px 8px; font-size: 10px; width: auto;">⚙ Settings</button>
@@ -489,12 +524,33 @@ export class AlgoPulseSidebarProvider implements vscode.WebviewViewProvider {
   <!-- Settings Drawer -->
   <div id="settingsDrawer" class="drawer">
     <div class="card-title">
-      <span>Settings & Configuration</span>
-      <span style="font-size: 9px; color: var(--green);">Free Gemini Tier</span>
+      <span>Settings & Multi-AI Hub</span>
+      <span style="font-size: 9px; color: var(--green);">Gemini • OpenAI • Claude</span>
     </div>
     <div class="input-group">
-      <label class="input-label">Gemini API Key (Google AI Studio)</label>
-      <input type="password" id="apiKeyInput" class="input-field" placeholder="AIzaSy..." />
+      <label class="input-label">Active Provider</label>
+      <select id="providerSelect" class="input-field" style="background: var(--bg); color: var(--text);">
+        <option value="auto">⚡ Auto (Smart Failover)</option>
+        <option value="gemini">Google Gemini</option>
+        <option value="openai">OpenAI</option>
+        <option value="claude">Anthropic Claude</option>
+      </select>
+    </div>
+    <div class="input-group">
+      <label class="input-label">Google Gemini API Key</label>
+      <input type="password" id="apiKeyInput" class="input-field" placeholder="AIzaSy... (Free tier)" />
+    </div>
+    <div class="input-group">
+      <label class="input-label">OpenAI API Key</label>
+      <input type="password" id="openaiApiKeyInput" class="input-field" placeholder="sk-... (gpt-4o-mini)" />
+    </div>
+    <div class="input-group">
+      <label class="input-label">Anthropic Claude API Key</label>
+      <input type="password" id="claudeApiKeyInput" class="input-field" placeholder="sk-ant-... (3.5 Haiku)" />
+    </div>
+    <div class="input-group">
+      <label class="input-label">Model Override (Default: auto)</label>
+      <input type="text" id="modelInput" class="input-field" placeholder="auto (or gpt-4o, claude-3-5-sonnet, gemini-2.0-flash)" />
     </div>
     <div class="input-group">
       <label class="input-label">Dashboard URL</label>
@@ -503,10 +559,6 @@ export class AlgoPulseSidebarProvider implements vscode.WebviewViewProvider {
     <div class="input-group">
       <label class="input-label">Extension Token (from Profile)</label>
       <input type="password" id="tokenInput" class="input-field" placeholder="ap_sec_..." />
-    </div>
-    <div class="input-group">
-      <label class="input-label">Gemini Model (Default: auto)</label>
-      <input type="text" id="modelInput" class="input-field" placeholder="auto (or gemini-1.5-flash, gemini-2.0-flash)" />
     </div>
     <button id="saveSettingsBtn" class="btn" style="margin-top: 4px;">Save Configuration</button>
   </div>
@@ -684,13 +736,16 @@ export class AlgoPulseSidebarProvider implements vscode.WebviewViewProvider {
     });
 
     saveSettingsBtn.addEventListener('click', () => {
+      const activeProvider = document.getElementById('providerSelect').value;
       const geminiApiKey = document.getElementById('apiKeyInput').value;
+      const openaiApiKey = document.getElementById('openaiApiKeyInput').value;
+      const anthropicApiKey = document.getElementById('claudeApiKeyInput').value;
       const dashboardUrl = document.getElementById('dashboardUrlInput').value;
       const extensionToken = document.getElementById('tokenInput').value;
       const preferredModel = document.getElementById('modelInput').value || 'auto';
       vscode.postMessage({
         type: 'SAVE_SETTINGS',
-        settings: { geminiApiKey, dashboardUrl, extensionToken, preferredModel }
+        settings: { activeProvider, geminiApiKey, openaiApiKey, anthropicApiKey, dashboardUrl, extensionToken, preferredModel }
       });
       settingsDrawer.style.display = 'none';
     });
@@ -721,7 +776,12 @@ export class AlgoPulseSidebarProvider implements vscode.WebviewViewProvider {
       switch (message.type) {
         case 'INIT_CONFIG': {
           if (message.config) {
+            if (message.config.activeProvider) {
+              document.getElementById('providerSelect').value = message.config.activeProvider;
+            }
             document.getElementById('apiKeyInput').value = message.config.geminiApiKey || '';
+            document.getElementById('openaiApiKeyInput').value = message.config.openaiApiKey || '';
+            document.getElementById('claudeApiKeyInput').value = message.config.anthropicApiKey || '';
             document.getElementById('dashboardUrlInput').value = message.config.dashboardUrl || 'http://localhost:3000';
             document.getElementById('tokenInput').value = message.config.extensionToken || '';
             document.getElementById('modelInput').value = message.config.preferredModel || 'auto';

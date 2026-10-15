@@ -92,10 +92,26 @@
     "configuration": {
       "title": "AlgoPulse",
       "properties": {
+        "algopulse.activeProvider": {
+          "type": "string",
+          "default": "auto",
+          "enum": ["auto", "gemini", "openai", "claude"],
+          "description": "Active AI Provider (auto failover, gemini, openai, or claude)."
+        },
         "algopulse.geminiApiKey": {
           "type": "string",
           "default": "",
-          "description": "Your free Google Gemini API Key from Google AI Studio (https://aistudio.google.com/app/apikey)."
+          "description": "Your Google Gemini API Key from Google AI Studio (https://aistudio.google.com/app/apikey)."
+        },
+        "algopulse.openaiApiKey": {
+          "type": "string",
+          "default": "",
+          "description": "Your OpenAI API Key from OpenAI Platform (https://platform.openai.com/api-keys)."
+        },
+        "algopulse.anthropicApiKey": {
+          "type": "string",
+          "default": "",
+          "description": "Your Anthropic Claude API Key from Anthropic Console (https://console.anthropic.com/)."
         },
         "algopulse.dashboardUrl": {
           "type": "string",
@@ -115,7 +131,7 @@
         "algopulse.preferredModel": {
           "type": "string",
           "default": "auto",
-          "description": "Preferred Gemini model for code review. Leave as 'auto' for dynamic discovery via Google ListModels API, or enter any supported model."
+          "description": "Preferred model for code review. Leave as 'auto' for dynamic discovery / fast defaults, or enter any specific model."
         }
       }
     }

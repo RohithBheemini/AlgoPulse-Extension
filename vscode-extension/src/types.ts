@@ -52,10 +52,16 @@ export interface AIAnalysisResult {
   optimal_code: string;
   assessed_difficulty?: 'Easy' | 'Medium' | 'Hard';
   model_used?: string;
+  provider_used?: string;
 }
 
+export type AIProvider = 'auto' | 'gemini' | 'openai' | 'claude';
+
 export interface ExtensionConfig {
+  activeProvider: AIProvider;
   geminiApiKey: string;
+  openaiApiKey: string;
+  anthropicApiKey: string;
   dashboardUrl: string;
   extensionToken: string;
   autoSync: boolean;

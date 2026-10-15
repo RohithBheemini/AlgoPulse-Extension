@@ -245,10 +245,10 @@ const AlgoPulseOverlayInner: React.FC = () => {
                 </div>
                 <div>
                   <p className="text-sm font-semibold text-[#f0f6fc]">
-                    Evaluating Code with Gemini AI...
+                    Evaluating Code with AI Engine...
                   </p>
                   <p className="text-xs text-[#8b949e] mt-1">
-                    Calculating Big-O complexities and testing optimality rubric
+                    Analyzing algorithmic approach & Big-O complexities
                   </p>
                 </div>
               </div>
@@ -283,9 +283,16 @@ const AlgoPulseOverlayInner: React.FC = () => {
                   {/* Score Banner */}
                   <div className="p-4 rounded-xl bg-[#161b22] border border-[#30363d] shadow-sm flex items-center justify-between">
                     <div>
-                      <span className="text-xs font-semibold uppercase tracking-wider text-[#8b949e]">
-                        Overall Score
-                      </span>
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs font-semibold uppercase tracking-wider text-[#8b949e]">
+                          Overall Score
+                        </span>
+                        {result.provider_used && (
+                          <span className="px-1.5 py-0.2 rounded text-[10px] bg-[#21262d] border border-[#30363d] text-[#4285F4] font-medium">
+                            {result.provider_used}
+                          </span>
+                        )}
+                      </div>
                       <div className="flex items-baseline gap-1 mt-0.5">
                         <span className="text-3xl font-extrabold text-[#f0f6fc]">
                           {scoreVal}

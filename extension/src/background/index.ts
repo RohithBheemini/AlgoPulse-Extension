@@ -1,8 +1,11 @@
-import { analyzeCodeWithGemini, resolveBestModel } from './gemini';
+import { analyzeCodeWithMultiProvider, testProviderKey } from './llm/orchestrator';
 import { ProblemMetadata, AIAnalysisResult, ExtensionSettings, SyncSubmissionPayload, SubmissionHistoryItem } from '../types';
 
 const DEFAULT_SETTINGS: ExtensionSettings = {
+  activeProvider: 'auto',
   geminiApiKey: '',
+  openaiApiKey: '',
+  anthropicApiKey: '',
   dashboardUrl: 'http://localhost:3000',
   extensionToken: '',
   autoSync: true,
@@ -74,43 +77,20 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
         return { success: true };
       }
 
+      if (message.type === 'TEST_PROVIDER_KEY') {
+        const { provider, apiKey } = message.payload || {};
+        if (!apiKey || !apiKey.trim()) {
+          return { success: false, message: 'API key is empty.' };
+        }
+        const result = await testProviderKey(provider || 'gemini', apiKey);
+        return result;
+      }
+
       if (message.type === 'TEST_GEMINI_KEY') {
         const apiKey = message.payload?.apiKey;
         if (!apiKey) return { success: false, message: 'API key is empty.' };
-        
-        const settings = await getStoredSettings();
-        const candidateModels = await resolveBestModel(apiKey, settings.preferredModel || 'auto');
-        let success = false;
-        let lastErr = '';
-        let workingModel = '';
-
-        for (const model of candidateModels) {
-          try {
-            const testRes = await fetch(
-              `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${encodeURIComponent(apiKey.trim())}`,
-              {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ contents: [{ parts: [{ text: 'Ping' }] }] })
-              }
-            );
-            if (testRes.ok) {
-              success = true;
-              workingModel = model;
-              break;
-            } else {
-              const err = await testRes.json().catch(() => ({}));
-              lastErr = err?.error?.message || `HTTP ${testRes.status}`;
-            }
-          } catch (e: any) {
-            lastErr = e.message;
-          }
-        }
-
-        if (success) {
-          return { success: true, message: `Connected to Gemini (${workingModel}) successfully!` };
-        }
-        return { success: false, message: lastErr || 'Failed to ping Gemini API' };
+        const result = await testProviderKey('gemini', apiKey);
+        return result;
       }
 
       if (message.type === 'TEST_DASHBOARD') {
@@ -130,18 +110,10 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
         const metadata: ProblemMetadata = message.payload;
         const settings = await getStoredSettings();
 
-        if (!settings.geminiApiKey) {
-          return {
-            success: false,
-            message: 'Gemini API key is not configured. Click the AlgoPulse extension icon in your toolbar to configure it.'
-          };
-        }
-
-        // Run Gemini Analysis
-        const analysis: AIAnalysisResult = await analyzeCodeWithGemini(
+        // Run Multi-Provider Analysis with smart failover
+        const analysis: AIAnalysisResult = await analyzeCodeWithMultiProvider(
           metadata,
-          settings.geminiApiKey,
-          settings.preferredModel || 'auto'
+          settings
         );
 
         const userApproachDisplay = analysis.user_approach?.name 
