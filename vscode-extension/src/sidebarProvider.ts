@@ -6,6 +6,8 @@ import { syncSubmissionToDashboard } from './sync';
 export class AlgoPulseSidebarProvider implements vscode.WebviewViewProvider {
   public static readonly viewType = 'algopulse.sidebarView';
   private _view?: vscode.WebviewView;
+  private _currentAnalysisState: 'idle' | 'analyzing' | 'done' = 'idle';
+  private _lastAnalysisData?: { metadata: ProblemMetadata; result: AIAnalysisResult; syncResult: any };
 
   constructor(private readonly _extensionUri: vscode.Uri) {}
 
@@ -103,6 +105,14 @@ export class AlgoPulseSidebarProvider implements vscode.WebviewViewProvider {
               preferredModel: config.get<string>('preferredModel') || 'auto'
             }
           });
+          if (this._currentAnalysisState === 'analyzing') {
+            this.postMessage({ type: 'ANALYSIS_STARTED' });
+          } else if (this._currentAnalysisState === 'done' && this._lastAnalysisData) {
+            this.postMessage({
+              type: 'ANALYSIS_SUCCESS',
+              ...this._lastAnalysisData
+            });
+          }
           break;
         }
       }
@@ -118,6 +128,13 @@ export class AlgoPulseSidebarProvider implements vscode.WebviewViewProvider {
   public async runAnalysisForEditor(editor: vscode.TextEditor): Promise<void> {
     if (!this._view) {
       await vscode.commands.executeCommand('algopulse.sidebarView.focus');
+      let attempts = 0;
+      while (!this._view && attempts < 30) {
+        await new Promise((r) => setTimeout(r, 50));
+        attempts++;
+      }
+    } else {
+      this._view.show?.(true);
     }
 
     const document = editor.document;
@@ -204,6 +221,7 @@ export class AlgoPulseSidebarProvider implements vscode.WebviewViewProvider {
       }
     }
 
+    this._currentAnalysisState = 'analyzing';
     this.postMessage({
       type: 'ANALYSIS_STARTED',
       metadata
@@ -251,6 +269,8 @@ export class AlgoPulseSidebarProvider implements vscode.WebviewViewProvider {
         syncResult = { synced: syncResp.success, message: syncResp.message };
       }
 
+      this._currentAnalysisState = 'done';
+      this._lastAnalysisData = { metadata, result, syncResult };
       this.postMessage({
         type: 'ANALYSIS_SUCCESS',
         metadata,
@@ -262,6 +282,7 @@ export class AlgoPulseSidebarProvider implements vscode.WebviewViewProvider {
         `AlgoPulse: Score ${result.score}/100 for ${metadata.title}!${syncResult.synced ? ' Synced to dashboard.' : ''}`
       );
     } catch (err: any) {
+      this._currentAnalysisState = 'idle';
       this.postMessage({
         type: 'ANALYSIS_ERROR',
         error: err.message || 'Analysis failed'

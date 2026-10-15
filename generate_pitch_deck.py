@@ -3,7 +3,7 @@ import sys
 from pptx import Presentation
 from pptx.util import Inches, Pt
 from pptx.dml.color import RGBColor
-from pptx.enum.text import PP_ALIGN, MSO_ANCHOR
+from pptx.enum.text import PP_ALIGN
 from pptx.enum.shapes import MSO_SHAPE
 
 # Initialize 16:9 Widescreen Presentation
@@ -11,441 +11,459 @@ prs = Presentation()
 prs.slide_width = Inches(13.333)
 prs.slide_height = Inches(7.5)
 
-# Design Palette
-BG_COLOR = RGBColor(13, 17, 23)         # #0D1117 Deep GitHub/VS Dark
-CARD_BG = RGBColor(22, 27, 34)          # #161B22 Elevated Card
-CARD_BORDER = RGBColor(48, 54, 61)      # #30363D Border
-TEXT_LIGHT = RGBColor(240, 246, 252)    # #F0F6FC Primary Crisp Text
-TEXT_MUTED = RGBColor(139, 148, 158)    # #8B949E Secondary Subtext
-ACCENT_BLUE = RGBColor(66, 133, 244)    # #4285F4 Google Blue
-ACCENT_GREEN = RGBColor(52, 168, 83)    # #34A853 Google Green
-ACCENT_YELLOW = RGBColor(251, 188, 5)   # #FBBC05 Google Yellow
-ACCENT_RED = RGBColor(234, 67, 53)      # #EA4335 Google Red
-CARD_HOVER = RGBColor(30, 41, 59)       # #1E293B
+# Clean Minimal White Theme Palette
+BG_WHITE = RGBColor(255, 255, 255)      # #FFFFFF Pure White Background
+CARD_BG = RGBColor(248, 250, 252)       # #F8FAFC Clean Light Surface
+CARD_BORDER = RGBColor(203, 213, 225)   # #CBD5E1 Subtle Border
+TEXT_DARK = RGBColor(15, 23, 42)        # #0F172A High-Contrast Dark Heading
+TEXT_BODY = RGBColor(30, 41, 59)        # #1E293B Crisp Dark Body Text
+TEXT_MUTED = RGBColor(71, 85, 105)      # #475569 Readable Subtitle Gray
+
+# Clean Accent Colors
+ACCENT_BLUE = RGBColor(37, 99, 235)     # #2563EB Blue
+ACCENT_GREEN = RGBColor(5, 150, 105)    # #059669 Green
+ACCENT_AMBER = RGBColor(217, 119, 6)    # #D97706 Amber
+ACCENT_RED = RGBColor(220, 38, 38)      # #DC2626 Red
 
 blank_layout = prs.slide_layouts[6]
 
-def set_slide_background(slide):
+def set_white_background(slide):
     background = slide.background
     fill = background.fill
     fill.solid()
-    fill.fore_color.rgb = BG_COLOR
+    fill.fore_color.rgb = BG_WHITE
 
-def add_header(slide, category_tag, title_text, subtitle_text=None, tag_color=ACCENT_BLUE):
-    # Category Pill
-    tag_box = slide.shapes.add_textbox(Inches(0.8), Inches(0.45), Inches(4.5), Inches(0.4))
+def add_header(slide, step_tag, title_text, subtitle_text=None, tag_color=ACCENT_BLUE):
+    # Top Step Tag
+    tag_box = slide.shapes.add_textbox(Inches(0.8), Inches(0.4), Inches(8.0), Inches(0.35))
     tf_tag = tag_box.text_frame
     tf_tag.word_wrap = True
     tf_tag.margin_left = tf_tag.margin_top = tf_tag.margin_right = tf_tag.margin_bottom = 0
     p_tag = tf_tag.paragraphs[0]
-    p_tag.text = category_tag.upper()
-    p_tag.font.size = Pt(11)
+    p_tag.text = step_tag.upper()
+    p_tag.font.size = Pt(13)
     p_tag.font.bold = True
     p_tag.font.color.rgb = tag_color
 
-    # Main Title (Bigger font for high readability)
-    title_box = slide.shapes.add_textbox(Inches(0.8), Inches(0.85), Inches(11.7), Inches(0.8))
+    # Large Slide Title (32pt)
+    title_box = slide.shapes.add_textbox(Inches(0.8), Inches(0.78), Inches(11.7), Inches(0.7))
     tf_title = title_box.text_frame
     tf_title.word_wrap = True
     tf_title.margin_left = tf_title.margin_top = tf_title.margin_right = tf_title.margin_bottom = 0
     p_title = tf_title.paragraphs[0]
     p_title.text = title_text
-    p_title.font.size = Pt(28)
+    p_title.font.size = Pt(32)
     p_title.font.bold = True
-    p_title.font.color.rgb = TEXT_LIGHT
+    p_title.font.color.rgb = TEXT_DARK
 
-    # Subtitle if present
+    # Large Subtitle (16pt)
     if subtitle_text:
-        sub_box = slide.shapes.add_textbox(Inches(0.8), Inches(1.65), Inches(11.7), Inches(0.45))
+        sub_box = slide.shapes.add_textbox(Inches(0.8), Inches(1.48), Inches(11.7), Inches(0.45))
         tf_sub = sub_box.text_frame
         tf_sub.word_wrap = True
         tf_sub.margin_left = tf_sub.margin_top = tf_sub.margin_right = tf_sub.margin_bottom = 0
         p_sub = tf_sub.paragraphs[0]
         p_sub.text = subtitle_text
-        p_sub.font.size = Pt(14)
+        p_sub.font.size = Pt(16)
         p_sub.font.color.rgb = TEXT_MUTED
 
-def add_card(slide, left, top, width, height, title, items, badge_text=None, accent_color=ACCENT_BLUE):
-    # Rounded Card Shape
+    # Clean Divider Line
+    line = slide.shapes.add_shape(MSO_SHAPE.RECTANGLE, Inches(0.8), Inches(2.02), Inches(11.73), Inches(0.02))
+    line.fill.solid()
+    line.fill.fore_color.rgb = CARD_BORDER
+    line.line.fill.background()
+
+def add_card(slide, left, top, width, height, title, items, accent_color=ACCENT_BLUE, body_size=16):
+    # Rounded Card
     shape = slide.shapes.add_shape(MSO_SHAPE.ROUNDED_RECTANGLE, left, top, width, height)
+    shape.adjustments[0] = 0.03
     shape.fill.solid()
     shape.fill.fore_color.rgb = CARD_BG
     shape.line.color.rgb = CARD_BORDER
     shape.line.width = Pt(1.2)
 
-    # Accent top border indicator line
-    accent_bar = slide.shapes.add_shape(MSO_SHAPE.ROUNDED_RECTANGLE, left, top, width, Inches(0.08))
-    accent_bar.fill.solid()
-    accent_bar.fill.fore_color.rgb = accent_color
-    accent_bar.line.fill.background()
+    # Top Accent Bar
+    bar = slide.shapes.add_shape(MSO_SHAPE.RECTANGLE, left, top, width, Inches(0.08))
+    bar.fill.solid()
+    bar.fill.fore_color.rgb = accent_color
+    bar.line.fill.background()
 
-    # Content Box inside Card
-    tb = slide.shapes.add_textbox(left + Inches(0.35), top + Inches(0.3), width - Inches(0.7), height - Inches(0.45))
+    # Text Content Box
+    tb = slide.shapes.add_textbox(left + Inches(0.32), top + Inches(0.28), width - Inches(0.64), height - Inches(0.45))
     tf = tb.text_frame
     tf.word_wrap = True
     tf.margin_left = tf.margin_top = tf.margin_right = tf.margin_bottom = 0
 
-    # Card Title
+    # Large Card Title (21pt)
     p_title = tf.paragraphs[0]
     p_title.text = title
-    p_title.font.size = Pt(19)
+    p_title.font.size = Pt(21)
     p_title.font.bold = True
-    p_title.font.color.rgb = TEXT_LIGHT
-    p_title.space_after = Pt(12)
+    p_title.font.color.rgb = TEXT_DARK
+    p_title.space_after = Pt(14)
 
-    # Bullets / Details
-    for idx, item in enumerate(items):
+    # Large, Easy-to-Read Bullets (16pt default)
+    for item in items:
         p = tf.add_paragraph()
         if isinstance(item, tuple):
             lead, text = item
             run1 = p.add_run()
-            run1.text = f"{lead} "
+            run1.text = f"• {lead} "
             run1.font.bold = True
-            run1.font.size = Pt(14)
+            run1.font.size = Pt(body_size)
             run1.font.color.rgb = accent_color
 
             run2 = p.add_run()
             run2.text = text
             run2.font.bold = False
-            run2.font.size = Pt(14)
-            run2.font.color.rgb = TEXT_LIGHT
+            run2.font.size = Pt(body_size)
+            run2.font.color.rgb = TEXT_BODY
         else:
             p.text = f"• {item}"
-            p.font.size = Pt(14)
-            p.font.color.rgb = TEXT_LIGHT
-        
-        p.space_after = Pt(8)
+            p.font.size = Pt(body_size)
+            p.font.color.rgb = TEXT_BODY
+        p.space_after = Pt(11)
+
 
 # ==============================================================================
-# SLIDE 1: Title & Pitch Hook
+# SLIDE 1: The Title and Team
 # ==============================================================================
 s1 = prs.slides.add_slide(blank_layout)
-set_slide_background(s1)
+set_white_background(s1)
 
-# Large Center Visual Box
-s1_box = s1.shapes.add_textbox(Inches(1.0), Inches(1.8), Inches(11.3), Inches(4.5))
+top_bar = s1.shapes.add_shape(MSO_SHAPE.RECTANGLE, Inches(0.8), Inches(0.75), Inches(1.8), Inches(0.09))
+top_bar.fill.solid()
+top_bar.fill.fore_color.rgb = ACCENT_BLUE
+top_bar.line.fill.background()
+
+s1_box = s1.shapes.add_textbox(Inches(0.8), Inches(1.05), Inches(11.7), Inches(3.2))
 tf1 = s1_box.text_frame
 tf1.word_wrap = True
 tf1.margin_left = tf1.margin_top = tf1.margin_right = tf1.margin_bottom = 0
 
-p_pre = tf1.paragraphs[0]
-p_pre.text = "⚡ NEXT-GEN DEVELOPER PEDAGOGY & SKILL INTELLIGENCE"
-p_pre.font.size = Pt(13)
-p_pre.font.bold = True
-p_pre.font.color.rgb = ACCENT_BLUE
-p_pre.space_after = Pt(14)
+p_tag = tf1.paragraphs[0]
+p_tag.text = "AI CODE REVIEWER & SKILL INTELLIGENCE PLATFORM"
+p_tag.font.size = Pt(14)
+p_tag.font.bold = True
+p_tag.font.color.rgb = ACCENT_BLUE
+p_tag.space_after = Pt(10)
 
-p_hero = tf1.add_paragraph()
-p_hero.text = "AlgoPulse"
-p_hero.font.size = Pt(54)
-p_hero.font.bold = True
-p_hero.font.color.rgb = TEXT_LIGHT
-p_hero.space_after = Pt(12)
+p_main = tf1.add_paragraph()
+p_main.text = "AlgoPulse"
+p_main.font.size = Pt(58)
+p_main.font.bold = True
+p_main.font.color.rgb = TEXT_DARK
+p_main.space_after = Pt(8)
 
-p_tagline = tf1.add_paragraph()
-p_tagline.text = "Beyond the Binary Verdict: Real-Time Algorithmic Code Review & Career Readiness"
-p_tagline.font.size = Pt(22)
-p_tagline.font.color.rgb = ACCENT_GREEN
-p_tagline.space_after = Pt(24)
+p_sub = tf1.add_paragraph()
+p_sub.text = "Look Beyond 'Accepted': Evaluate Your Approach, Get Hints, and Never Forget"
+p_sub.font.size = Pt(24)
+p_sub.font.bold = True
+p_sub.font.color.rgb = ACCENT_GREEN
+p_sub.space_after = Pt(14)
 
-p_pitch = tf1.add_paragraph()
-p_pitch.text = "A multi-platform developer ecosystem uniting Chrome, VS Code, and Next.js to evaluate problem-solving approaches, uncover paradigm blind spots, and guarantee interview retention."
-p_pitch.font.size = Pt(15)
-p_pitch.font.color.rgb = TEXT_MUTED
+p_desc = tf1.add_paragraph()
+p_desc.text = "A unified coding mentor working directly inside Chrome (LeetCode, GFG, HackerRank), VS Code, and a live Next.js dashboard."
+p_desc.font.size = Pt(17)
+p_desc.font.color.rgb = TEXT_MUTED
+
+add_card(s1, Inches(0.8), Inches(4.45), Inches(11.73), Inches(2.4),
+         "Project Team & Guide Details", [
+             ("Project Lead:", "Rohith Bheemini"),
+             ("Team Members:", "[Member 2 Name & Roll No.]   •   [Member 3 Name & Roll No.]   •   [Member 4 Name & Roll No.]"),
+             ("Project Guide:", "[Guide Name & Designation]   •   Department of Computer Science & Engineering")
+         ], accent_color=ACCENT_BLUE, body_size=16)
+
 
 # ==============================================================================
-# SLIDE 2: How We Got This Idea (The Origin Story)
+# SLIDE 2: The Problem Currently and How It Affects Us
 # ==============================================================================
 s2 = prs.slides.add_slide(blank_layout)
-set_slide_background(s2)
-add_header(s2, "The Origin Story", "How We Got This Idea: The 'Accepted' Trap", 
-           "Every developer knows the relief of seeing green text on LeetCode. But is green code really good code?")
+set_white_background(s2)
+add_header(s2, "Slide 2 • Problem Statement", "The Problem Currently & How It Affects Us",
+           "Three major problems every student faces while practicing coding problems today.",
+           tag_color=ACCENT_RED)
 
-add_card(s2, Inches(0.8), Inches(2.2), Inches(3.6), Inches(4.7), 
-         "The False Sense of Security", [
-             ("The Trap:", "You write an O(N²) brute-force solution. The judge accepts it because the test inputs happen to be small."),
-             ("The Illusion:", "You feel ready and confident because the platform gave you an 'Accepted' verdict."),
-             ("The Reality:", "In a Tier-1 tech interview, passing tests is only step one. An O(N²) solution when O(N) exists is an instant rejection.")
-         ], accent_color=ACCENT_RED)
+add_card(s2, Inches(0.8), Inches(2.25), Inches(3.65), Inches(4.7),
+         "1. The 'Accepted' Trap", [
+             ("What Happens:", "Platforms like LeetCode only say 'Accepted' or 'Wrong Answer'."),
+             ("The Hidden Flaw:", "Slow brute-force code (O(N²)) still passes when test cases are small."),
+             ("How It Hurts Us:", "We think we mastered the problem, but get rejected in real interviews for slow code.")
+         ], accent_color=ACCENT_RED, body_size=15.5)
 
-add_card(s2, Inches(4.8), Inches(2.2), Inches(3.6), Inches(4.7), 
-         "The Context-Switch Friction", [
-             ("The Split:", "We practice algorithms in the web browser, but we build real software in VS Code."),
-             ("The Disconnect:", "No existing tool connects your daily local engineering with your competitive programming streak."),
-             ("The Pain:", "Your growth data is scattered across three platforms and lost in private scratchpad files.")
-         ], accent_color=ACCENT_YELLOW)
+add_card(s2, Inches(4.84), Inches(2.25), Inches(3.65), Inches(4.7),
+         "2. ChatGPT Spoils Answers", [
+             ("What Happens:", "When stuck, students copy-paste their code into ChatGPT."),
+             ("The Hidden Flaw:", "ChatGPT immediately gives the full working code instead of teaching."),
+             ("How It Hurts Us:", "Spoiling the answer stops our brain from learning, and switching tabs breaks focus.")
+         ], accent_color=ACCENT_AMBER, body_size=15.5)
 
-add_card(s2, Inches(8.8), Inches(2.2), Inches(3.6), Inches(4.7), 
-         "The Forgetting Curve", [
-             ("The Reality:", "You solve 100 problems this month. Two months later, you can barely solve Two Sum."),
-             ("The Cause:", "No platform models Ebbinghaus memory decay or reminds you before mental extinction occurs."),
-             ("The Goal:", "We needed a personal AI senior engineer living in our workflow that coaches us continuously.")
-         ], accent_color=ACCENT_BLUE)
+add_card(s2, Inches(8.88), Inches(2.25), Inches(3.65), Inches(4.7),
+         "3. We Forget What We Solve", [
+             ("What Happens:", "We solve 100 problems this month and move on."),
+             ("The Hidden Flaw:", "No coding site tracks memory loss or tells us when to revise."),
+             ("How It Hurts Us:", "Two months later in the interview room, we forget the exact pattern we practiced.")
+         ], accent_color=ACCENT_BLUE, body_size=15.5)
+
 
 # ==============================================================================
-# SLIDE 3: Why This Approach vs. Alternatives
+# SLIDE 3: The Research We Have Done to Solve This Problem
 # ==============================================================================
 s3 = prs.slides.add_slide(blank_layout)
-set_slide_background(s3)
-add_header(s3, "Market Gap Analysis", "Why This Approach? (And Why Not The Others?)", 
-           "Existing alternatives either grade blindly, spoil the answer, or miss algorithmic semantics.")
+set_white_background(s3)
+add_header(s3, "Slide 3 • Literature Review (2024–2026)", "The Research We Have Done to Solve This Problem",
+           "Verified 2024–2026 research papers that proved these gaps and guided our solution.",
+           tag_color=ACCENT_BLUE)
 
-add_card(s3, Inches(0.8), Inches(2.2), Inches(3.6), Inches(4.7), 
-         "Traditional Judges (LeetCode/GFG)", [
-             ("Limitation 1:", "Binary verdict only (Pass vs. Fail). Zero feedback on algorithmic style or invariants."),
-             ("Limitation 2:", "Server CPU noise causes 40ms vs. 80ms runtime swings for identical code."),
-             ("Limitation 3:", "Does not tell you if you used the right mental model or if your memory was wasteful.")
-         ], accent_color=ACCENT_RED)
+add_card(s3, Inches(0.8), Inches(2.25), Inches(3.65), Inches(4.7),
+         "1. Code Efficiency Gaps", [
+             ("Papers (2024–2026):", "EffiBench (NeurIPS 2024), BigO(Bench) (2025), & Khan et al. (2026)."),
+             ("What They Found:", "Passed LeetCode code is often 13x slower and uses 43x more memory than optimal code."),
+             ("How We Solved It:", "We built a 4-Pillar Score (0–100) that grades Approach, Time, Space, and Code Style.")
+         ], accent_color=ACCENT_RED, body_size=15)
 
-add_card(s3, Inches(4.8), Inches(2.2), Inches(3.6), Inches(4.7), 
-         "Raw ChatGPT / Chat LLMs", [
-             ("Limitation 1:", "Spoils the answer immediately, completely destroying the learning and recall struggle."),
-             ("Limitation 2:", "High context friction: requires copy-pasting code, problem descriptions, and constraints."),
-             ("Limitation 3:", "No persistent tracking: does not remember your streaks, paradigms, or weak spots.")
-         ], accent_color=ACCENT_YELLOW)
+add_card(s3, Inches(4.84), Inches(2.25), Inches(3.65), Inches(4.7),
+         "2. Socratic Hints vs. Spoiling", [
+             ("Papers (2024–2025):", "CodeAid (ACM CHI 2024) & Al-Hossami et al. (ACM SIGCSE 2024 / 2025)."),
+             ("What They Found:", "700-student study showed direct AI answers harm learning; step-by-step hints work best."),
+             ("How We Solved It:", "We built 3-Step Progressive Hints that guide your thinking without giving away code.")
+         ], accent_color=ACCENT_AMBER, body_size=15)
 
-add_card(s3, Inches(8.8), Inches(2.2), Inches(3.6), Inches(4.7), 
-         "AlgoPulse: The In-Flow Mentor", [
-             ("In-Editor Flow:", "Reviews code directly in LeetCode, GFG, HackerRank, and VS Code with 1 click."),
-             ("4-Pillar Model:", "Scores Optimality, Time, Space, and Cleanliness on a calibrated 100-point rubric."),
-             ("Pedagogical Hints:", "3 progressive tiers nudge your thinking without ever spoiling code.")
-         ], accent_color=ACCENT_GREEN)
+add_card(s3, Inches(8.88), Inches(2.25), Inches(3.65), Inches(4.7),
+         "3. In-Editor Flow & Memory", [
+             ("Papers (2024–2026):", "Nam et al. (ICSE 2024), Pantelaios (NDSS 2024), LECTOR (2025), & Schill (2026)."),
+             ("What They Found:", "In-editor tools save time, and grouping problems by concept prevents forgetting."),
+             ("How We Solved It:", "Chrome & VS Code extensions synced to a 14-Pattern Spaced Repetition Reminder.")
+         ], accent_color=ACCENT_GREEN, body_size=15)
+
 
 # ==============================================================================
-# SLIDE 4: How It Helps in Everyday Tasks
+# SLIDE 4: The Workflow and Implementation We Have Taken
 # ==============================================================================
 s4 = prs.slides.add_slide(blank_layout)
-set_slide_background(s4)
-add_header(s4, "Everyday Value", "How AlgoPulse Transforms Everyday Workflows", 
-           "Designed for daily use by working engineers, college students, and technical interview candidates.")
+set_white_background(s4)
+add_header(s4, "Slide 4 • Our Solution & Implementation", "The Implementation We Have Built",
+           "Three core components working together to coach developers in real time.",
+           tag_color=ACCENT_GREEN)
 
-add_card(s4, Inches(0.8), Inches(2.2), Inches(5.6), Inches(4.7), 
-         "1. Daily Problem Solving & Interview Prep", [
-             ("Zero Context-Switching:", "Click 'Analyze Code' directly on LeetCode or press Ctrl+Alt+A in VS Code. Never leave your editor."),
-             ("Immediate Pedagogical Hints:", "Stuck on a tricky problem? Reveal Tier 1 (an invariant nudge) or Tier 2 (a pattern nudge) without giving away the solution."),
-             ("Memory Decay Protection:", "The dashboard automatically alerts you when high-yield patterns are about to fade from memory.")
-         ], accent_color=ACCENT_BLUE)
+add_card(s4, Inches(0.8), Inches(2.25), Inches(3.65), Inches(4.7),
+         "1. Chrome & VS Code Extensions", [
+             ("Browser Extension:", "Works directly on LeetCode, GeeksforGeeks, and HackerRank with 1 click."),
+             ("VS Code Extension:", "Press Ctrl+Alt+A to review local Python, C++, Java, or JS files."),
+             ("Zero Copy-Paste:", "Reads your code automatically and opens a clean side panel.")
+         ], accent_color=ACCENT_BLUE, body_size=15.5)
 
-add_card(s4, Inches(6.8), Inches(2.2), Inches(5.6), Inches(4.7), 
-         "2. Real-World Engineering & Clean Code", [
-             ("Space & Time Consciousness:", "Highlights hidden O(N) memory allocations (like string slicing or unneeded hash tables) before code hits production."),
-             ("Senior Interview Preparation:", "Generates real follow-up questions: 'What if N = 10¹²?' or 'Can you solve this with O(1) space?'"),
-             ("Verified Proof of Consistency:", "Share a public authenticated transcript with engineering recruiters showing real streaks and paradigm mastery.")
-         ], accent_color=ACCENT_GREEN)
+add_card(s4, Inches(4.84), Inches(2.25), Inches(3.65), Inches(4.7),
+         "2. 4-Pillar Score & 3-Step Hints", [
+             ("100-Point Score:", "35 pts Approach + 25 pts Time + 20 pts Space + 20 pts Clean Code."),
+             ("3-Step Hints:", "Hint 1 (Clue) -> Hint 2 (Data Structure) -> Hint 3 (Logic Steps)."),
+             ("Interview Curveballs:", "Asks senior follow-up questions like 'What if input size is 10¹²?'")
+         ], accent_color=ACCENT_GREEN, body_size=15.5)
+
+add_card(s4, Inches(8.88), Inches(2.25), Inches(3.65), Inches(4.7),
+         "3. Smart Revision Dashboard", [
+             ("16-Week Heatmap:", "Tracks daily coding streaks across all 4 platforms in one place."),
+             ("14 Coding Patterns:", "Shows your strong and weak topics (Two Pointers, DP, Graphs)."),
+             ("Forgetting Alerts:", "Reminds you to revise old problems right before you forget them.")
+         ], accent_color=ACCENT_AMBER, body_size=15.5)
+
 
 # ==============================================================================
-# SLIDE 5: System Architecture & Data Pipeline
+# SLIDE 5: The Architecture (Heading Only — Blank Space for Image Paste)
 # ==============================================================================
 s5 = prs.slides.add_slide(blank_layout)
-set_slide_background(s5)
-add_header(s5, "Architecture", "System Architecture & Live Data Flow", 
-           "High-performance client extensions communicating with a zero-cost AI engine and reactive web dashboard.")
+set_white_background(s5)
+add_header(s5, "Slide 5 • System Architecture", "System Architecture",
+           "How Web Coding Platforms, VS Code, Google Gemini AI, and the Next.js Dashboard connect.",
+           tag_color=ACCENT_BLUE)
+# Left open below the header so you can paste your architecture diagram image directly.
 
-add_card(s5, Inches(0.8), Inches(2.2), Inches(2.7), Inches(4.7), 
-         "Client Layer", [
-             ("Chrome Ext (MV3):", "Injects into Monaco (LeetCode), Ace (GFG), & CodeMirror (HackerRank)."),
-             ("VS Code Ext:", "TypeScript extension using active TextEditor buffer and Webview panel."),
-             ("Zero Friction:", "Native hotkeys and slide-over panels.")
-         ], accent_color=ACCENT_BLUE)
-
-add_card(s5, Inches(3.8), Inches(2.2), Inches(2.7), Inches(4.7), 
-         "AI Engine", [
-             ("Google Gemini API:", "Dynamic model discovery via Google ModelService.ListModels API (3.7/3.6/3.8 Flash)."),
-             ("Zero Hardcoding:", "Auto-detects live supported models with fallback resilience."),
-             ("Zero Latency:", "Sub-2-second evaluation turnaround with strict JSON formatting.")
-         ], accent_color=ACCENT_YELLOW)
-
-add_card(s5, Inches(6.8), Inches(2.2), Inches(2.7), Inches(4.7), 
-         "Web Dashboard", [
-             ("Next.js 14 App:", "React 18, Tailwind CSS, and GitHub dark styling."),
-             ("Dynamic Theme:", "Google 4-color ambient glowing lighting."),
-             ("Live Polling:", "5-second non-intrusive sync with live activity badges.")
-         ], accent_color=ACCENT_GREEN)
-
-add_card(s5, Inches(9.8), Inches(2.2), Inches(2.7), Inches(4.7), 
-         "Hybrid Storage", [
-             ("Supabase DB:", "PostgreSQL database with Row Level Security."),
-             ("Local Mirroring:", "Automatic JSON fallback for 100% offline functionality."),
-             ("Token Security:", "Secure Bearer extension tokens.")
-         ], accent_color=ACCENT_RED)
 
 # ==============================================================================
-# SLIDE 6: Implementation Depth - Editor Hooks & Manifest V3
+# SLIDE 6: Tech Stack Explanation
 # ==============================================================================
 s6 = prs.slides.add_slide(blank_layout)
-set_slide_background(s6)
-add_header(s6, "Engineering Depth", "In-Depth Implementation: Editor AST & Runtime Hooks", 
-           "How we extracted editor code safely across three competitive programming platforms and desktop IDEs.")
+set_white_background(s6)
+add_header(s6, "Slide 6 • Technology Stack", "Tech Stack Explanation (100% Free Tools)",
+           "Simple, fast, and 100% free technologies so any student can use it at zero cost.",
+           tag_color=ACCENT_BLUE)
 
-add_card(s6, Inches(0.8), Inches(2.2), Inches(5.6), Inches(4.7), 
-         "Overcoming Browser Sandbox Isolation", [
-             ("The Challenge:", "Modern web platforms isolate editor state inside window objects unreachable by standard content scripts."),
-             ("Monaco Hook (LeetCode):", "We inject an in-page runtime bridge directly into window.monaco.editor.getModels() to read exact buffer AST without relying on fragile DOM scraping."),
-             ("Ace & CodeMirror:", "Custom bridge hooks attach directly to window.ace and CodeMirror editor instances on GeeksforGeeks and HackerRank."),
-             ("Shadow DOM Slide-Over:", "Review drawer renders inside an isolated Shadow DOM container, guaranteeing zero CSS collisions with host websites.")
-         ], accent_color=ACCENT_BLUE)
+add_card(s6, Inches(0.8), Inches(2.25), Inches(3.65), Inches(4.7),
+         "1. Extensions (Front-End)", [
+             ("Chrome Manifest V3:", "Latest secure Chrome standard; reads code from LeetCode & GFG editors."),
+             ("VS Code Extension API:", "Built with TypeScript & esbuild into a tiny 33 KB package."),
+             ("Shadow DOM UI:", "Keeps our review panel clean without breaking the website's layout.")
+         ], accent_color=ACCENT_BLUE, body_size=15.5)
 
-add_card(s6, Inches(6.8), Inches(2.2), Inches(5.6), Inches(4.7), 
-         "VS Code Extension Architecture", [
-             ("Native Editor Access:", "Captures active selection or entire document via vscode.window.activeTextEditor in real time."),
-             ("Interactive Webview:", "Renders an embedded dark-themed UI panel in the VS Code Activity Bar with live hint reveal toggles."),
-             ("One-Click Code Insertion:", "Includes an 'Insert in Editor' command that replaces the user buffer with optimal reference code on request."),
-             ("Universal Language Support:", "Accurately parses Python, Java, C++, TypeScript, Go, and Rust problem statements and code.")
-         ], accent_color=ACCENT_GREEN)
+add_card(s6, Inches(4.84), Inches(2.25), Inches(3.65), Inches(4.7),
+         "2. AI Brain (Evaluation)", [
+             ("Google Gemini Flash API:", "100% free tier via Google AI Studio; reviews code in under 2 seconds."),
+             ("Auto-Model Switcher:", "Automatically picks the fastest working Gemini Flash model."),
+             ("Zero Laptop Load:", "Runs in the cloud—no heavy GPU or RAM needed on student laptops.")
+         ], accent_color=ACCENT_GREEN, body_size=15.5)
+
+add_card(s6, Inches(8.88), Inches(2.25), Inches(3.65), Inches(4.7),
+         "3. Dashboard & Database", [
+             ("Next.js 14 & Tailwind CSS:", "Powers both the web dashboard and backend API routes."),
+             ("Supabase PostgreSQL:", "Free cloud database that securely stores each user's progress."),
+             ("Local JSON Backup:", "Saves a local copy on disk so the dashboard works even without internet.")
+         ], accent_color=ACCENT_AMBER, body_size=15.5)
+
 
 # ==============================================================================
-# SLIDE 7: The 4-Pillar Evaluation & Pedagogical Hint Engine
+# SLIDE 7: The Workflow
 # ==============================================================================
 s7 = prs.slides.add_slide(blank_layout)
-set_slide_background(s7)
-add_header(s7, "Pedagogical Model", "The 4-Pillar Algorithmic Rubric & Hint Engine", 
-           "Moving away from simplistic execution time to holistic algorithmic craftsmanship.")
+set_white_background(s7)
+add_header(s7, "Slide 7 • Step-by-Step Workflow", "How the Complete Workflow Operates",
+           "Four simple steps from writing code to tracking long-term mastery.",
+           tag_color=ACCENT_GREEN)
 
-add_card(s7, Inches(0.8), Inches(2.2), Inches(5.6), Inches(4.7), 
-         "The Calibrated 100-Point Rubric", [
-             ("🧠 Algorithmic Optimality (35 pts):", "Evaluates whether you selected the mathematically optimal paradigm (e.g. Hash Map vs. Sorting vs. Dynamic Programming)."),
-             ("⏱️ Time Complexity (25 pts):", "Calculates Big-O distance between your approach and the theoretical lower bound."),
-             ("💾 Space Complexity (20 pts):", "Evaluates auxiliary heap and stack allocations vs. in-place pointer mutations."),
-             ("🧹 Cleanliness & Edge Cases (20 pts):", "Checks variable naming, guard clauses, empty inputs, single elements, and integer overflow handling.")
-         ], accent_color=ACCENT_BLUE)
+add_card(s7, Inches(0.8), Inches(2.25), Inches(2.75), Inches(4.7),
+         "Step 1: Write Code", [
+             ("On Web:", "Click 'Analyze Code' on LeetCode or GFG."),
+             ("On Desktop:", "Press Ctrl+Alt+A in VS Code."),
+             ("Auto-Read:", "Extension grabs your code and problem title.")
+         ], accent_color=ACCENT_BLUE, body_size=15)
 
-add_card(s7, Inches(6.8), Inches(2.2), Inches(5.6), Inches(4.7), 
-         "3-Tier Socratic Progressive Hints", [
-             ("Tier 1 - Structural Invariant:", "Gives a subtle nudge without naming algorithms. Example: 'Notice that elements are already sorted in ascending order.'"),
-             ("Tier 2 - Pattern Suggestion:", "Suggests the applicable data structure or mental model. Example: 'Consider using a two-pointer inward scan from both ends.'"),
-             ("Tier 3 - Concrete Blueprint:", "Explains the exact state transitions step-by-step without giving away code, preserving the 'Aha!' moment for the student.")
-         ], accent_color=ACCENT_YELLOW)
+add_card(s7, Inches(3.79), Inches(2.25), Inches(2.75), Inches(4.7),
+         "Step 2: AI Review", [
+             ("Fast Check:", "Sent securely to Google Gemini Flash."),
+             ("Score (0–100):", "Grades Approach, Time, Space, and Style."),
+             ("Big-O Check:", "Compares your speed vs. best speed.")
+         ], accent_color=ACCENT_GREEN, body_size=15)
+
+add_card(s7, Inches(6.78), Inches(2.25), Inches(2.75), Inches(4.7),
+         "Step 3: Learn & Fix", [
+             ("Side Panel:", "See exact bottlenecks right next to your code."),
+             ("3-Step Hints:", "Unlock hints one by one without spoilers."),
+             ("1-Click Insert:", "Insert optimal reference code when done.")
+         ], accent_color=ACCENT_AMBER, body_size=15)
+
+add_card(s7, Inches(9.77), Inches(2.25), Inches(2.75), Inches(4.7),
+         "Step 4: Live Sync", [
+             ("Auto-Save:", "Sent to Next.js API and Supabase DB."),
+             ("Live Update:", "Dashboard updates in 5 seconds automatically."),
+             ("Revision Queue:", "Schedules your next revision date.")
+         ], accent_color=ACCENT_RED, body_size=15)
+
 
 # ==============================================================================
-# SLIDE 8: 14-Paradigm Competency Matrix & Spaced Repetition
+# SLIDE 8: The Limitations
 # ==============================================================================
 s8 = prs.slides.add_slide(blank_layout)
-set_slide_background(s8)
-add_header(s8, "Skill Intelligence", "14-Paradigm Competency Matrix & Forgetting Curve", 
-           "Going beyond generic tags like 'Array' to diagnose exact algorithmic mental models.")
+set_white_background(s8)
+add_header(s8, "Slide 8 • Current Limitations", "Current Limitations of the System",
+           "Honest technical constraints of our current version and how we handle them.",
+           tag_color=ACCENT_RED)
 
-add_card(s8, Inches(0.8), Inches(2.2), Inches(5.6), Inches(4.7), 
-         "14 Foundational Interview Archetypes", [
-             ("Diagnostic Mapping:", "Tracks Two Pointers, Sliding Window, Monotonic Stack, In-place Reversal, Fast & Slow Pointers, Two Heaps, Subsets, Binary Search, Top K, Knapsack, and Graph BFS/DFS."),
-             ("Blind-Spot Detection:", "Identifies patterns where your scores drop below 60% or patterns you haven't touched in weeks."),
-             ("Readiness Gauge (0-100%):", "Computes an empirical FAANG/Tier-1 interview readiness index updated with every submission.")
-         ], accent_color=ACCENT_BLUE)
+add_card(s8, Inches(0.8), Inches(2.25), Inches(3.65), Inches(4.7),
+         "1. Free API Speed Limit", [
+             ("The Limit:", "Google's free Gemini API allows 15 requests per minute per key."),
+             ("When It Matters:", "If 50 students use the exact same API key at once, it will slow down."),
+             ("How We Handle It:", "Each student enters their own free personal API key in settings.")
+         ], accent_color=ACCENT_RED, body_size=15.5)
 
-add_card(s8, Inches(6.8), Inches(2.2), Inches(5.6), Inches(4.7), 
-         "Ebbinghaus Spaced Repetition Engine", [
-             ("The Decay Formula:", "Decay % = min(100, Days Elapsed × 16 - Score Bonus). Models how fast memories fade without deliberate recall."),
-             ("Urgency Tiers:", "Automatically classifies solved problems into: Due Today (≥65% decay), Upcoming (30-64%), and Mastered (<30%)."),
-             ("Targeted Repetition:", "Prompts you to re-solve key patterns right before memory extinction occurs, locking concepts into long-term memory.")
-         ], accent_color=ACCENT_GREEN)
+add_card(s8, Inches(4.84), Inches(2.25), Inches(3.65), Inches(4.7),
+         "2. Internet Needed for AI", [
+             ("The Limit:", "Generating a new AI code review requires an active internet connection."),
+             ("When It Matters:", "In offline college exam halls without internet, live AI calls cannot run."),
+             ("How We Handle It:", "The dashboard and past saved reviews still work 100% offline via Local JSON.")
+         ], accent_color=ACCENT_AMBER, body_size=15.5)
+
+add_card(s8, Inches(8.88), Inches(2.25), Inches(3.65), Inches(4.7),
+         "3. Website Layout Updates", [
+             ("The Limit:", "Reading problem titles and difficulty relies on webpage layout tags."),
+             ("When It Matters:", "If LeetCode redesigns its webpage, title detection may need an update."),
+             ("How We Handle It:", "We backup-read the problem name directly from the page URL.")
+         ], accent_color=ACCENT_BLUE, body_size=15.5)
+
 
 # ==============================================================================
-# SLIDE 9: Senior Interview Curveballs & Public Portfolio
+# SLIDE 9: The Future Scope
 # ==============================================================================
 s9 = prs.slides.add_slide(blank_layout)
-set_slide_background(s9)
-add_header(s9, "Advanced Features", "Senior Follow-Up Curveballs & Verified Portfolio", 
-           "Preparing candidates for real senior interview scenarios and showcasing verifiable proof of competency.")
+set_white_background(s9)
+add_header(s9, "Slide 9 • Future Scope", "Future Scope & Next Phase Upgrades",
+           "Upcoming features to turn AlgoPulse into a complete career and classroom platform.",
+           tag_color=ACCENT_GREEN)
 
-add_card(s9, Inches(0.8), Inches(2.2), Inches(5.6), Inches(4.7), 
-         "Senior Interviewer Follow-Up Curveballs", [
-             ("Beyond Simple Code:", "In real senior interviews, passing the problem is only step one. Interviewers immediately throw scale and constraint curveballs."),
-             ("Scale Variations:", "'What if the dataset contains 10¹² elements and exceeds single-machine RAM?' -> Explores distributed sharding and disk streams."),
-             ("Constraint Inversions:", "'Can you solve this with strict O(1) space without modifying the input array?' -> Explores bit manipulation and cycles."),
-             ("Interactive Model Answers:", "Includes collapsible senior engineering reference architectures for every challenge.")
-         ], accent_color=ACCENT_RED)
+add_card(s9, Inches(0.8), Inches(2.25), Inches(3.65), Inches(4.7),
+         "1. Auto-Push Code to GitHub", [
+             ("GitHub Code Insertion:", "Automatically pushes your best solved code to your GitHub repo in 1 click."),
+             ("Auto-README Badges:", "Creates a clean README with your 4-Pillar Score and Big-O stats."),
+             ("GitHub PR Checker:", "Bot that checks team Pull Requests for slow O(N²) loops.")
+         ], accent_color=ACCENT_GREEN, body_size=15.5)
 
-add_card(s9, Inches(6.8), Inches(2.2), Inches(5.6), Inches(4.7), 
-         "Cryptographic / Public Verified Transcript (/verify)", [
-             ("Zero Token Exposure:", "Generates a clean public proof-of-work transcript that developers can link on resumes and LinkedIn without exposing secret tokens."),
-             ("Verifiable Metrics:", "Displays 16-week activity heatmap, interview readiness score, and paradigm competencies."),
-             ("Recruiter Confidence:", "Gives hiring managers and bootcamp mentors authentic proof of consistent problem-solving.")
-         ], accent_color=ACCENT_GREEN)
+add_card(s9, Inches(4.84), Inches(2.25), Inches(3.65), Inches(4.7),
+         "2. Voice AI & Visual Animations", [
+             ("Voice Mock Interviewer:", "Talk aloud to an AI interviewer that asks follow-up questions in real time."),
+             ("Visual Step-by-Step:", "Animated arrows showing how Two Pointers and Sliding Windows move."),
+             ("More Coding Sites:", "Adding support for Codeforces, AtCoder, and CodeChef.")
+         ], accent_color=ACCENT_BLUE, body_size=15.5)
+
+add_card(s9, Inches(8.88), Inches(2.25), Inches(3.65), Inches(4.7),
+         "3. College & Offline AI Mode", [
+             ("Teacher / TA Dashboard:", "Lets professors see which coding topics the whole class is struggling with."),
+             ("Copy-Paste Detection:", "Checks typing patterns to ensure students write code themselves."),
+             ("100% Offline AI (Ollama):", "Runs a small local AI model on lab PCs without needing internet.")
+         ], accent_color=ACCENT_AMBER, body_size=15.5)
+
 
 # ==============================================================================
-# SLIDE 10: Complete Live Demo Walkthrough
+# SLIDE 10: Thank You
 # ==============================================================================
 s10 = prs.slides.add_slide(blank_layout)
-set_slide_background(s10)
-add_header(s10, "Live Demonstration", "The Complete 3-Minute Live Demo Structure", 
-           "A flawless sequence to showcase the entire platform during tomorrow's presentation.")
+set_white_background(s10)
 
-add_card(s10, Inches(0.8), Inches(2.2), Inches(3.6), Inches(4.7), 
-         "Step 1: The Browser Extension", [
-             ("Open LeetCode/GFG:", "Navigate to Kadane's Algorithm on GFG or Two Sum on LeetCode."),
-             ("In-Page Widget:", "Show the floating AlgoPulse badge and click 'Analyze Code'."),
-             ("4-Pillar Feedback:", "Walk through the Optimality, Time, Space, and Cleanliness scores."),
-             ("Progressive Hints:", "Click 'Reveal Tier 1 Observation' to show Socratic coaching.")
-         ], accent_color=ACCENT_BLUE)
+thank_card = s10.shapes.add_shape(MSO_SHAPE.ROUNDED_RECTANGLE, Inches(1.6), Inches(1.35), Inches(10.13), Inches(4.8))
+thank_card.adjustments[0] = 0.03
+thank_card.fill.solid()
+thank_card.fill.fore_color.rgb = CARD_BG
+thank_card.line.color.rgb = CARD_BORDER
+thank_card.line.width = Pt(1.5)
 
-add_card(s10, Inches(4.8), Inches(2.2), Inches(3.6), Inches(4.7), 
-         "Step 2: The VS Code Extension", [
-             ("Open VS Code:", "Show local editor with a solution file (solution.py)."),
-             ("Run Hotkey:", "Press Ctrl+Alt+A or click 'AlgoPulse' in the Activity Bar."),
-             ("Instant Analysis:", "Highlight how the same 4-pillar review appears inside the desktop IDE."),
-             ("Insert Reference Code:", "Demonstrate 1-click insertion of optimal code.")
-         ], accent_color=ACCENT_YELLOW)
+thank_bar = s10.shapes.add_shape(MSO_SHAPE.RECTANGLE, Inches(1.6), Inches(1.35), Inches(10.13), Inches(0.09))
+thank_bar.fill.solid()
+thank_bar.fill.fore_color.rgb = ACCENT_BLUE
+thank_bar.line.fill.background()
 
-add_card(s10, Inches(8.8), Inches(2.2), Inches(3.6), Inches(4.7), 
-         "Step 3: Web Dashboard Sync", [
-             ("Switch to Dashboard:", "Open http://localhost:3000/dashboard."),
-             ("User Isolation:", "Authenticated personal dashboard — zero mock data for new users."),
-             ("14-Paradigm Radar:", "Show dynamic paradigm counts and interview readiness score."),
-             ("Public Transcript:", "Click 'Verify' to show the shareable recruiter transcript.")
-         ], accent_color=ACCENT_GREEN)
+tb10 = s10.shapes.add_textbox(Inches(2.1), Inches(1.95), Inches(9.13), Inches(3.7))
+tf10 = tb10.text_frame
+tf10.word_wrap = True
 
-# ==============================================================================
-# SLIDE 11: Real-World Impact & 100% Free Stack
-# ==============================================================================
-s11 = prs.slides.add_slide(blank_layout)
-set_slide_background(s11)
-add_header(s11, "Feasibility & Cost", "100% Free-Tier Architecture & Scalability", 
-           "Engineered from day one to operate with zero infrastructure cost and infinite accessibility.")
+p10_tag = tf10.paragraphs[0]
+p10_tag.text = "ALGOPULSE — AI CODE REVIEWER & SKILL INTELLIGENCE"
+p10_tag.font.size = Pt(14)
+p10_tag.font.bold = True
+p10_tag.font.color.rgb = ACCENT_BLUE
+p10_tag.alignment = PP_ALIGN.CENTER
+p10_tag.space_after = Pt(14)
 
-add_card(s11, Inches(0.8), Inches(2.2), Inches(5.6), Inches(4.7), 
-         "100% Free-Tier Technology Stack", [
-             ("AI Intelligence:", "Google Gemini Flash API via dynamic ListModels discovery (Gemini 3.7/3.6/3.8 Flash)."),
-             ("Web Application:", "Next.js 14 App Router deployed locally or on Vercel Hobby (100% free)."),
-             ("Database Layer:", "Supabase PostgreSQL free tier (500MB) with offline local JSON mirroring."),
-             ("Extensions:", "Chrome Manifest V3 and VS Code Ext API (distributed freely without app store fees).")
-         ], accent_color=ACCENT_BLUE)
+p10_main = tf10.add_paragraph()
+p10_main.text = "Thank You!"
+p10_main.font.size = Pt(56)
+p10_main.font.bold = True
+p10_main.font.color.rgb = TEXT_DARK
+p10_main.alignment = PP_ALIGN.CENTER
+p10_main.space_after = Pt(14)
 
-add_card(s11, Inches(6.8), Inches(2.2), Inches(5.6), Inches(4.7), 
-         "Who Benefits from AlgoPulse?", [
-             ("Individual Engineers:", "Saves hundreds of hours of directionless grinding and prevents memory loss."),
-             ("Coding Bootcamps & Universities:", "Automates pedagogical TA reviews with progressive hint scaffolds."),
-             ("Engineering Hiring:", "Replaces unreliable resume bullet points with verified 16-week proof-of-work portfolios.")
-         ], accent_color=ACCENT_GREEN)
+p10_sub = tf10.add_paragraph()
+p10_sub.text = "We Welcome Your Questions & Live Demo Requests"
+p10_sub.font.size = Pt(22)
+p10_sub.font.bold = True
+p10_sub.font.color.rgb = ACCENT_GREEN
+p10_sub.alignment = PP_ALIGN.CENTER
+p10_sub.space_after = Pt(24)
 
-# ==============================================================================
-# SLIDE 12: Conclusion & Summary
-# ==============================================================================
-s12 = prs.slides.add_slide(blank_layout)
-set_slide_background(s12)
-add_header(s12, "Summary", "Conclusion: Elevating Algorithmic Mastery", 
-           "Turning algorithmic problem solving into a structured, delightful, and verifiable science.")
+p10_links = tf10.add_paragraph()
+p10_links.text = "Chrome Extension  •  VS Code Extension  •  Web Dashboard (http://localhost:3000)"
+p10_links.font.size = Pt(16)
+p10_links.font.color.rgb = TEXT_MUTED
+p10_links.alignment = PP_ALIGN.CENTER
 
-add_card(s12, Inches(0.8), Inches(2.2), Inches(3.6), Inches(4.7), 
-         "The Shift in Thinking", [
-             ("From:", "Passing test cases by accident and memorizing solutions."),
-             ("To:", "Mastering 14 foundational mental models and understanding exact Big-O trade-offs."),
-             ("Result:", "Confidence in any interview room, regardless of problem variations.")
-         ], accent_color=ACCENT_BLUE)
-
-add_card(s12, Inches(4.8), Inches(2.2), Inches(3.6), Inches(4.7), 
-         "The Power of Workflow", [
-             ("Seamless Flow:", "One unified ecosystem spanning Chrome, VS Code, and Next.js."),
-             ("Continuous Recall:", "Spaced repetition ensures you never lose what you worked hard to learn."),
-             ("No Friction:", "Instant evaluation in under 2 seconds.")
-         ], accent_color=ACCENT_YELLOW)
-
-add_card(s12, Inches(8.8), Inches(2.2), Inches(3.6), Inches(4.7), 
-         "Ready Today", [
-             ("Fully Built:", "Dual extensions, 15 Next.js routes, 4-pillar evaluation, and 19 verified API tests."),
-             ("Production Verified:", "0 type errors, clean REST endpoints, and live syncing."),
-             ("Try It Now:", "Open http://localhost:3000 to see AlgoPulse in action!")
-         ], accent_color=ACCENT_GREEN)
-
-# Save presentation
-output_path = os.path.abspath("Pitch_AlgoPulse.pptx")
-prs.save(output_path)
-print(f"SUCCESS: Presentation successfully generated at: {output_path}")
+# Save to both PPT_AlogPulse.pptx and Pitch_AlgoPulse.pptx
+for filename in ["PPT_AlogPulse.pptx", "Pitch_AlgoPulse.pptx"]:
+    out = os.path.abspath(filename)
+    prs.save(out)
+    print(f"SUCCESS: Saved 10-slide white-theme presentation to: {out}")

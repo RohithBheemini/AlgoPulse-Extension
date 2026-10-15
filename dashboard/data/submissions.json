@@ -1,5 +1,168 @@
 [
   {
+    "user_id": "948f8d18-1cfc-41ef-8d2a-00ba261daee4",
+    "problem_title": "Algosample1",
+    "problem_slug": "algosample1",
+    "platform": "vscode",
+    "difficulty": "Easy",
+    "language": "java",
+    "user_code": "import java.util.HashMap;\r\nimport java.util.Map;\r\n\r\nclass Solution {\r\n    public int[] twoSum(int[] nums, int target) {\r\n        Map<Integer, Integer> map = new HashMap<>();\r\n        for (int i = 0; i < nums.length; i++) {\r\n            int complement = target - nums[i];\r\n            if (map.containsKey(complement)) {\r\n                return new int[] { map.get(complement), i };\r\n            }\r\n            map.put(nums[i], i);\r\n        }\r\n        return new int[] {};\r\n    }\r\n}",
+    "overall_score": 100,
+    "optimality_score": 20,
+    "time_score": 20,
+    "space_score": 20,
+    "cleanliness_score": 20,
+    "user_time_complexity": "Hash Map Single-Pass Lookup (O(n))",
+    "user_space_complexity": "O(n)",
+    "optimal_time_complexity": "Hash Map Single-Pass Lookup (O(n))",
+    "optimal_space_complexity": "O(n)",
+    "why_suboptimal": "The student's code is already optimal. No suboptimal patterns or redundant traversals exist in this implementation.",
+    "why_ideal": "The solution achieves the optimal O(n) time complexity by trading space for time using a Hash Map, effectively reducing what would be an O(n^2) nested loop problem down to a single pass.",
+    "summary_feedback": "This is already the theoretical optimal approach. It solves the problem in a single pass with O(1) average time complexity per map lookup, minimizing both time and space redundant operations.",
+    "improvements": [
+      "Code is already fully optimized and clean.",
+      "Could optionally initialize the HashMap with a capacity and load factor if array sizes are known to be large, to prevent rehashing."
+    ],
+    "optimal_code": "import java.util.HashMap;\nimport java.util.Map;\n\nclass Solution {\n    public int[] twoSum(int[] nums, int target) {\n        Map<Integer, Integer> map = new HashMap<>();\n        for (int i = 0; i < nums.length; i++) {\n            int complement = target - nums[i];\n            if (map.containsKey(complement)) {\n                return new int[] { map.get(complement), i };\n            }\n            map.put(nums[i], i);\n        }\n        return new int[] {};\n    }\n}",
+    "paradigm": "Hash Table",
+    "follow_up_questions": [
+      {
+        "question": "How does your solution scale if the dataset size increases from N = 10^5 to N = 10^9?",
+        "category": "Scale",
+        "answer": "Analyze memory bounds. If N exceeds RAM, replace in-memory structures with disk-backed external merge-sort or chunked map-reduce streams."
+      },
+      {
+        "question": "Can you solve this with strict O(1) auxiliary memory without modifying the input array?",
+        "category": "Constraint",
+        "answer": "Examine mathematical invariants, bit manipulation, or two-pointer cycles to eliminate auxiliary dynamic allocations."
+      }
+    ],
+    "id": "sub_1791885601162_cd25w",
+    "created_at": "2026-10-13T10:00:01.162Z"
+  },
+  {
+    "user_id": "24e6f7df-98fe-40b7-97fc-525217fab55f",
+    "problem_title": "Algosample1",
+    "problem_slug": "algosample1",
+    "platform": "vscode",
+    "difficulty": "Easy",
+    "language": "java",
+    "user_code": "import java.util.HashMap;\r\nimport java.util.Map;\r\n\r\nclass Solution {\r\n    public int[] twoSum(int[] nums, int target) {\r\n        Map<Integer, Integer> map = new HashMap<>();\r\n        for (int i = 0; i < nums.length; i++) {\r\n            int complement = target - nums[i];\r\n            if (map.containsKey(complement)) {\r\n                return new int[] { map.get(complement), i };\r\n            }\r\n            map.put(nums[i], i);\r\n        }\r\n        return new int[] {};\r\n    }\r\n}",
+    "overall_score": 100,
+    "optimality_score": 20,
+    "time_score": 20,
+    "space_score": 20,
+    "cleanliness_score": 20,
+    "user_time_complexity": "Hash Map Single-Pass Lookup (O(n))",
+    "user_space_complexity": "O(n)",
+    "optimal_time_complexity": "Hash Map Single-Pass Lookup (O(n))",
+    "optimal_space_complexity": "O(n)",
+    "why_suboptimal": "The student's approach is already the optimal solution for this problem. No improvements are needed.",
+    "why_ideal": "It achieves O(n) time complexity by trading space for time, using a hash map to reduce the inner search time from O(n) to O(1) on average.",
+    "summary_feedback": "This is the optimal approach for the Two Sum problem. By checking for the complement and inserting into the hash map in a single pass, we achieve linear time complexity while using linear space.",
+    "improvements": [
+      "None required. The code is exceptionally clean, optimal, and follows best practices."
+    ],
+    "optimal_code": "import java.util.HashMap;\nimport java.util.Map;\n\nclass Solution {\n    public int[] twoSum(int[] nums, int target) {\n        Map<Integer, Integer> map = new HashMap<>();\n        for (int i = 0; i < nums.length; i++) {\n            int complement = target - nums[i];\n            if (map.containsKey(complement)) {\n                return new int[] { map.get(complement), i };\n            }\n            map.put(nums[i], i);\n        }\n        return new int[] {};\n    }\n}",
+    "paradigm": "Hash Table",
+    "follow_up_questions": [
+      {
+        "question": "How does your solution scale if the dataset size increases from N = 10^5 to N = 10^9?",
+        "category": "Scale",
+        "answer": "Analyze memory bounds. If N exceeds RAM, replace in-memory structures with disk-backed external merge-sort or chunked map-reduce streams."
+      },
+      {
+        "question": "Can you solve this with strict O(1) auxiliary memory without modifying the input array?",
+        "category": "Constraint",
+        "answer": "Examine mathematical invariants, bit manipulation, or two-pointer cycles to eliminate auxiliary dynamic allocations."
+      }
+    ],
+    "id": "sub_1791885553615_mlz1q",
+    "created_at": "2026-10-13T09:59:13.615Z"
+  },
+  {
+    "user_id": "948f8d18-1cfc-41ef-8d2a-00ba261daee4",
+    "problem_title": "Palindrome Number",
+    "problem_slug": "palindrome-number",
+    "platform": "leetcode",
+    "difficulty": "Easy",
+    "language": "java",
+    "user_code": "class Solution {\n    public boolean isPalindrome(int x) {\n            int temp=x;\n            int rev=0;\n            if(temp==0){\n                return true;\n            }\n            while(temp>0){\n                rev=rev*10 + temp%10;\n                temp/=10;\n            }\n            if(rev==x){\n                return true;\n            }\n        return false;\n    }\n}",
+    "overall_score": 90,
+    "optimality_score": 32,
+    "time_score": 23,
+    "space_score": 20,
+    "cleanliness_score": 17,
+    "user_time_complexity": "Integer Reversal Approach (O(log10(n)))",
+    "user_space_complexity": "O(1)",
+    "optimal_time_complexity": "Half-Integer Reversal Approach (O(log10(n)))",
+    "optimal_space_complexity": "O(1)",
+    "why_suboptimal": "The student's approach reverses the entire integer, which can cause integer overflow for certain numbers near the boundary of 32-bit signed integers (though standard LeetCode test cases might not trigger it directly since negative numbers are rejected upfront and positive numbers exceeding half range won't match a palindrome properly). Furthermore, reversing the full number does unnecessary work when comparing only requires checking half.",
+    "why_ideal": "Reversing only half the integer avoids potential arithmetic overflow entirely, halves the number of loop iterations, and handles trailing zeros elegantly.",
+    "summary_feedback": "By reversing only half of the digits, we cut the work in half and naturally prevent integer overflow that happens with very large palindromes near the integer boundary.",
+    "improvements": [
+      "Add guard clauses for negative numbers and numbers ending in 0 (other than 0 itself).",
+      "Optimize the loop to run only until the reversed half is greater than or equal to the remaining digits."
+    ],
+    "optimal_code": "class Solution {\n    public boolean isPalindrome(int x) {\n        // Negative numbers and numbers that end with 0 (except 0 itself) cannot be palindromes\n        if (x < 0 || (x % 10 == 0 && x != 0)) {\n            return false;\n        }\n\n        int revertedNumber = 0;\n        while (x > revertedNumber) {\n            revertedNumber = revertedNumber * 10 + x % 10;\n            x /= 10;\n        }\n\n        // When the length is an odd number, we can get rid of the middle digit by revertedNumber / 10\n        // For example, when x = 12321, at the end of the loop we get x = 12, revertedNumber = 123\n        // So we compare x == revertedNumber / 10\n        return x == revertedNumber || x == revertedNumber / 10;\n    }\n}",
+    "paradigm": "Mathematical Digit Extraction",
+    "follow_up_questions": [
+      {
+        "question": "How does your solution scale if the dataset size increases from N = 10^5 to N = 10^9?",
+        "category": "Scale",
+        "answer": "Analyze memory bounds. If N exceeds RAM, replace in-memory structures with disk-backed external merge-sort or chunked map-reduce streams."
+      },
+      {
+        "question": "Can you solve this with strict O(1) auxiliary memory without modifying the input array?",
+        "category": "Constraint",
+        "answer": "Examine mathematical invariants, bit manipulation, or two-pointer cycles to eliminate auxiliary dynamic allocations."
+      }
+    ],
+    "id": "sub_1791885426800_ls935",
+    "created_at": "2026-10-13T09:57:06.800Z"
+  },
+  {
+    "user_id": "9b89410e-3c6a-4491-8ea0-317d47b8e56f",
+    "problem_title": "Palindrome Number",
+    "problem_slug": "palindrome-number",
+    "platform": "leetcode",
+    "difficulty": "Easy",
+    "language": "java",
+    "user_code": "class Solution {\n    public boolean isPalindrome(int x) {\n            int temp=x;\n            int rev=0;\n            if(temp==0){\n                return true;\n            }\n            while(temp>0){\n                rev=rev*10 + temp%10;\n                temp/=10;\n            }\n            if(rev==x){\n                return true;\n            }\n        return false;\n    }\n}",
+    "overall_score": 85,
+    "optimality_score": 30,
+    "time_score": 20,
+    "space_score": 20,
+    "cleanliness_score": 15,
+    "user_time_complexity": "Integer Reversal Approach (O(log10(n)))",
+    "user_space_complexity": "O(1)",
+    "optimal_time_complexity": "Half-Integer Reversal Approach (O(log10(n)))",
+    "optimal_space_complexity": "O(1)",
+    "why_suboptimal": "The student's approach successfully avoids string conversion and achieves O(1) space, but reversing the entire integer can cause integer overflow for numbers close to Integer.MAX_VALUE (although palindromes cannot overflow in that specific way, it's a good defensive practice). Furthermore, it processes all digits instead of stopping halfway.",
+    "why_ideal": "Reversing only half of the number eliminates the risk of overflow entirely and reduces the number of division and modulo operations by half, aligning with the mathematically optimal strategy for this problem.",
+    "summary_feedback": "Reversing only half the number avoids potential integer overflow issues that can occur with full integer reversal for values near Integer.MAX_VALUE, and slightly optimizes performance by doing half the work.",
+    "improvements": [
+      "Handle edge cases like negative numbers and numbers ending with 0 explicitly at the beginning to save unnecessary computation.",
+      "Optimize by reversing only half of the digits to prevent potential overflow issues."
+    ],
+    "optimal_code": "class Solution {\n    public boolean isPalindrome(int x) {\n        // Negative numbers and numbers that end with 0 (except 0 itself) cannot be palindromes\n        if (x < 0 || (x % 10 == 0 && x != 0)) {\n            return false;\n        }\n        \n        int reversedHalf = 0;\n        while (x > reversedHalf) {\n            reversedHalf = reversedHalf * 10 + x % 10;\n            x /= 10;\n        }\n        \n        // When the length is an odd number, we can get rid of the middle digit by reversedHalf / 10\n        return x == reversedHalf || x == reversedHalf / 10;\n    }\n}",
+    "paradigm": "Mathematical Digit Extraction",
+    "follow_up_questions": [
+      {
+        "question": "How does your solution scale if the dataset size increases from N = 10^5 to N = 10^9?",
+        "category": "Scale",
+        "answer": "Analyze memory bounds. If N exceeds RAM, replace in-memory structures with disk-backed external merge-sort or chunked map-reduce streams."
+      },
+      {
+        "question": "Can you solve this with strict O(1) auxiliary memory without modifying the input array?",
+        "category": "Constraint",
+        "answer": "Examine mathematical invariants, bit manipulation, or two-pointer cycles to eliminate auxiliary dynamic allocations."
+      }
+    ],
+    "id": "sub_1791868016765_2u1oc",
+    "created_at": "2026-10-13T05:06:56.765Z"
+  },
+  {
     "user_id": "24e6f7df-98fe-40b7-97fc-525217fab55f",
     "problem_title": "Kadanes Algorithm 1587115620",
     "problem_slug": "kadanes-algorithm-1587115620",

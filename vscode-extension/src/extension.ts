@@ -16,7 +16,10 @@ export function activate(context: vscode.ExtensionContext) {
 
   // Command 1: Analyze Code
   const analyzeCmd = vscode.commands.registerCommand('algopulse.analyzeCode', async () => {
-    const editor = vscode.window.activeTextEditor;
+    let editor = vscode.window.activeTextEditor;
+    if (!editor && vscode.window.visibleTextEditors.length > 0) {
+      editor = vscode.window.visibleTextEditors[0];
+    }
     if (!editor) {
       vscode.window.showInformationMessage('AlgoPulse: Please open a code file in the editor to analyze.');
       return;

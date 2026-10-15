@@ -1,0 +1,68 @@
+<mxfile host="app.diagrams.net" modified="2026-10-13T11:07:30.000Z" agent="Mozilla/5.0" version="24.7.0" type="device">
+  <diagram id="algopulse-square" name="Page-1">
+    <mxGraphModel dx="800" dy="800" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="680" pageHeight="680" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+
+        <!-- ROW 1: CODING SURFACES (TOP) -->
+        <mxCell id="n_web" value="&lt;b&gt;Web Coding Platforms&lt;/b&gt;&lt;div&gt;(LeetCode, GFG, HackerRank)&lt;/div&gt;" style="rounded=0;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+          <mxGeometry x="60" y="40" width="220" height="70" as="geometry" />
+        </mxCell>
+
+        <mxCell id="n_ide" value="&lt;b&gt;VS Code IDE&lt;/b&gt;&lt;div&gt;(Local Code Files)&lt;/div&gt;" style="rounded=0;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+          <mxGeometry x="400" y="40" width="220" height="70" as="geometry" />
+        </mxCell>
+
+        <!-- ROW 2: EXTENSIONS -->
+        <mxCell id="n_chrome" value="&lt;b&gt;Chrome Extension (MV3)&lt;/b&gt;&lt;div&gt;In-Page Review Drawer&lt;/div&gt;" style="rounded=0;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+          <mxGeometry x="60" y="170" width="220" height="70" as="geometry" />
+        </mxCell>
+
+        <mxCell id="n_vsc" value="&lt;b&gt;VS Code Extension&lt;/b&gt;&lt;div&gt;Activity Bar Webview Panel&lt;/div&gt;" style="rounded=0;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+          <mxGeometry x="400" y="170" width="220" height="70" as="geometry" />
+        </mxCell>
+
+        <!-- ROW 3: AI ENGINE (CENTER) -->
+        <mxCell id="n_ai" value="&lt;b&gt;Google Gemini Flash API&lt;/b&gt;&lt;div&gt;- 4-Pillar Score (0-100)&lt;/div&gt;&lt;div&gt;- 3-Tier Progressive Hints&lt;/div&gt;&lt;div&gt;- Big-O Complexity Check&lt;/div&gt;" style="rounded=1;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+          <mxGeometry x="200" y="310" width="280" height="110" as="geometry" />
+        </mxCell>
+
+        <!-- ROW 4: DASHBOARD & DATABASE (BOTTOM) -->
+        <mxCell id="n_dash" value="&lt;b&gt;Next.js 14 Web Dashboard&lt;/b&gt;&lt;div&gt;- 16-Week Activity Heatmap&lt;/div&gt;&lt;div&gt;- 14-Paradigm Radar&lt;/div&gt;&lt;div&gt;- Spaced Repetition Queue&lt;/div&gt;" style="rounded=0;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+          <mxGeometry x="60" y="490" width="240" height="100" as="geometry" />
+        </mxCell>
+
+        <mxCell id="n_db" value="&lt;b&gt;Supabase PostgreSQL&lt;/b&gt;&lt;div&gt;+ Local JSON Fallback&lt;/div&gt;" style="shape=cylinder3;whiteSpace=wrap;html=1;boundedLbl=1;backgroundOutline=1;size=15;" vertex="1" parent="1">
+          <mxGeometry x="430" y="495" width="180" height="90" as="geometry" />
+        </mxCell>
+
+        <!-- ARROWS -->
+        <mxCell id="e1" value="Extract Code" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" edge="1" parent="1" source="n_web" target="n_chrome">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <mxCell id="e2" value="Ctrl+Alt+A" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" edge="1" parent="1" source="n_ide" target="n_vsc">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <mxCell id="e3" value="HTTPS Request" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.25;entryY=0;entryDx=0;entryDy=0;" edge="1" parent="1" source="n_chrome" target="n_ai">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <mxCell id="e4" value="HTTPS Request" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.75;entryY=0;entryDx=0;entryDy=0;" edge="1" parent="1" source="n_vsc" target="n_ai">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <mxCell id="e5" value="POST /api/submissions" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" edge="1" parent="1" source="n_ai" target="n_dash">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <mxCell id="e6" value="Read / Write" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;entryPerimeter=0;startArrow=classic;startFill=1;" edge="1" parent="1" source="n_dash" target="n_db">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>
