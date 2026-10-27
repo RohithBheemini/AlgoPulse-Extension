@@ -8,11 +8,18 @@ import {
   Copy,
   RefreshCw,
   Eye,
+  EyeOff,
   Zap,
   Award,
-  Code2
+  Code2,
+  Settings,
+  Key,
+  ExternalLink,
+  Save,
+  Cpu,
+  Layers
 } from 'lucide-react';
-import { ProblemMetadata, AIAnalysisResult } from '../types';
+import { ProblemMetadata, AIAnalysisResult, ExtensionSettings, AIProvider } from '../types';
 import { extractCurrentProblemContext } from './extractor';
 
 const AlgoPulseOverlayInner: React.FC = () => {
@@ -25,13 +32,91 @@ const AlgoPulseOverlayInner: React.FC = () => {
   const [copied, setCopied] = useState(false);
   const [unlockedHints, setUnlockedHints] = useState<number>(0);
   const [showOptimalCode, setShowOptimalCode] = useState(false);
+  const [viewMode, setViewMode] = useState<'analysis' | 'settings'>('analysis');
+  const [settings, setSettings] = useState<ExtensionSettings>({
+    activeProvider: 'auto',
+    geminiApiKey: '',
+    openaiApiKey: '',
+    anthropicApiKey: '',
+    dashboardUrl: 'http://localhost:3000',
+    extensionToken: '',
+    autoSync: true,
+    preferredModel: 'auto'
+  });
+  const [showKeys, setShowKeys] = useState<{ gemini?: boolean; openai?: boolean; claude?: boolean }>({});
+  const [saveStatus, setSaveStatus] = useState<string | null>(null);
+  const [testStatuses, setTestStatuses] = useState<Record<string, { loading: boolean; message: string; ok?: boolean }>>({});
 
-  // Refresh context when opening
+  const loadSettings = () => {
+    try {
+      chrome.runtime.sendMessage({ type: 'GET_SETTINGS' }, (res) => {
+        if (res?.success && res.settings) {
+          setSettings(res.settings);
+        }
+      });
+    } catch (e) {
+      console.warn('[AlgoPulse Overlay] Failed to load settings:', e);
+    }
+  };
+
+  // Refresh context and settings when opening
   useEffect(() => {
     if (isOpen) {
       extractCurrentProblemContext().then(setContext);
+      loadSettings();
     }
   }, [isOpen]);
+
+  const handleSaveSettings = () => {
+    try {
+      chrome.runtime.sendMessage({ type: 'SAVE_SETTINGS', payload: settings }, (res) => {
+        if (res?.success) {
+          setSaveStatus('Settings saved successfully!');
+          setTimeout(() => setSaveStatus(null), 3000);
+        }
+      });
+    } catch (e: any) {
+      setSaveStatus(`Failed to save: ${e.message}`);
+    }
+  };
+
+  const handleTestProvider = (provider: 'gemini' | 'openai' | 'claude') => {
+    const key = provider === 'gemini'
+      ? settings.geminiApiKey
+      : (provider === 'openai' ? settings.openaiApiKey : settings.anthropicApiKey);
+
+    if (!key || !key.trim()) return;
+
+    setTestStatuses(prev => ({
+      ...prev,
+      [provider]: { loading: true, message: `Pinging ${provider}...` }
+    }));
+
+    try {
+      chrome.runtime.sendMessage(
+        { type: 'TEST_PROVIDER_KEY', payload: { provider, apiKey: key } },
+        (res) => {
+          setTestStatuses(prev => ({
+            ...prev,
+            [provider]: {
+              loading: false,
+              ok: res?.success,
+              message: res?.message || (res?.success ? 'Key is valid!' : 'Test failed')
+            }
+          }));
+        }
+      );
+    } catch (err: any) {
+      setTestStatuses(prev => ({
+        ...prev,
+        [provider]: { loading: false, ok: false, message: err.message || 'Error testing key' }
+      }));
+    }
+  };
+
+  const toggleShowKey = (id: 'gemini' | 'openai' | 'claude') => {
+    setShowKeys(prev => ({ ...prev, [id]: !prev[id] }));
+  };
 
   const handleAnalyze = async () => {
     setLoading(true);
@@ -163,78 +248,382 @@ const AlgoPulseOverlayInner: React.FC = () => {
                   </span>
                 </h2>
                 <p className="text-xs text-[#8b949e]">
-                  {context?.title || 'LeetCode Problem'}
+                  {viewMode === 'settings' ? 'API Keys & Configuration' : (context?.title || 'LeetCode Problem')}
                 </p>
               </div>
             </div>
 
-            <button
-              type="button"
-              onClick={() => setIsOpen(false)}
-              className="p-1.5 rounded-lg text-[#8b949e] hover:text-[#f0f6fc] hover:bg-[#21262d] transition cursor-pointer"
-            >
-              <X className="w-5 h-5" />
-            </button>
+            <div className="flex items-center gap-1.5">
+              <button
+                type="button"
+                onClick={() => {
+                  setViewMode(viewMode === 'settings' ? 'analysis' : 'settings');
+                  if (viewMode !== 'settings') loadSettings();
+                }}
+                className={`p-1.5 rounded-lg transition cursor-pointer ${
+                  viewMode === 'settings'
+                    ? 'bg-[#4285F4] text-white shadow-sm'
+                    : 'text-[#8b949e] hover:text-[#f0f6fc] hover:bg-[#21262d]'
+                }`}
+                title={viewMode === 'settings' ? 'Back to Analysis' : 'API Keys & Settings'}
+              >
+                <Settings className="w-4 h-4" />
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setIsOpen(false)}
+                className="p-1.5 rounded-lg text-[#8b949e] hover:text-[#f0f6fc] hover:bg-[#21262d] transition cursor-pointer"
+                title="Close"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
           </div>
 
           {/* Body Content */}
           <div className="flex-1 overflow-y-auto p-4 space-y-4">
-            {/* Context Card */}
-            <div className="p-3 rounded-xl bg-[#161b22] border border-[#30363d] flex items-center justify-between text-xs">
-              <div className="flex items-center gap-2">
-                <span className={`px-2 py-0.5 rounded-full font-medium ${getDifficultyBadge(context?.difficulty || 'Medium')}`}>
-                  {context?.difficulty || 'Medium'}
-                </span>
-                <span className="text-[#8b949e] font-mono">
-                  {context?.language || 'python3'}
-                </span>
-              </div>
-              <button
-                type="button"
-                onClick={handleAnalyze}
-                disabled={loading}
-                className="flex items-center gap-1.5 px-3 py-1.5 bg-[#4285F4] hover:bg-[#3367D6] text-white font-medium rounded-lg shadow-sm shadow-[#4285F4]/30 transition disabled:opacity-50 cursor-pointer text-xs"
-              >
-                <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
-                <span>{loading ? 'Evaluating...' : 'Analyze Code'}</span>
-              </button>
-            </div>
+            {viewMode === 'settings' ? (
+              <div className="space-y-4">
+                {/* Save Feedback Banner */}
+                {saveStatus && (
+                  <div className={`p-3 rounded-xl border text-xs flex items-center gap-2 ${
+                    saveStatus.includes('success')
+                      ? 'bg-[#34A853]/15 border-[#34A853]/30 text-[#34A853]'
+                      : 'bg-[#EA4335]/15 border-[#EA4335]/30 text-[#EA4335]'
+                  }`}>
+                    {saveStatus.includes('success') ? <CheckCircle className="w-4 h-4 shrink-0" /> : <AlertCircle className="w-4 h-4 shrink-0" />}
+                    <span>{saveStatus}</span>
+                  </div>
+                )}
 
-            {/* Error Message */}
-            {error && (
-              <div className="p-3.5 rounded-xl bg-[#EA4335]/15 border border-[#EA4335]/30 text-[#EA4335] text-xs flex gap-2.5">
-                <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
-                <div className="flex-1">
-                  <p className="font-semibold text-[#f0f6fc]">Analysis Failed</p>
-                  <p className="mt-0.5 leading-relaxed text-[#c9d1d9]">{error}</p>
-                  {(error.toLowerCase().includes('reloaded') || error.toLowerCase().includes('refresh') || error.toLowerCase().includes('context invalidated')) && (
-                    <button
-                      type="button"
-                      onClick={() => window.location.reload()}
-                      className="mt-2.5 inline-flex items-center gap-1.5 px-3 py-1.5 bg-[#4285F4] hover:bg-[#3367D6] text-white font-medium text-xs rounded-lg transition shadow-sm cursor-pointer"
-                    >
-                      <RefreshCw className="w-3.5 h-3.5" />
-                      <span>Refresh Page (F5) to Reconnect</span>
-                    </button>
-                  )}
+                {/* Section Header */}
+                <div className="flex items-center justify-between pb-1 border-b border-[#30363d]">
+                  <div className="flex items-center gap-2">
+                    <Key className="w-4 h-4 text-[#FBBC05]" />
+                    <h3 className="text-xs font-bold text-[#f0f6fc]">AI Provider & API Keys</h3>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setViewMode('analysis')}
+                    className="text-xs text-[#4285F4] hover:underline cursor-pointer"
+                  >
+                    ← Back to Review
+                  </button>
+                </div>
+
+                {/* 1. Active Provider Selection */}
+                <div className="space-y-1.5">
+                  <label className="text-xs font-semibold text-[#f0f6fc] flex items-center gap-1.5">
+                    <Cpu className="w-3.5 h-3.5 text-[#4285F4]" />
+                    Active AI Provider
+                  </label>
+                  <div className="grid grid-cols-4 gap-1 p-1 bg-[#161b22] border border-[#30363d] rounded-lg text-[11px]">
+                    {(['auto', 'gemini', 'openai', 'claude'] as AIProvider[]).map((prov) => {
+                      const isActive = settings.activeProvider === prov;
+                      const label = prov === 'auto' ? '⚡ Auto' : prov === 'gemini' ? 'Gemini' : prov === 'openai' ? 'OpenAI' : 'Claude';
+                      return (
+                        <button
+                          key={prov}
+                          type="button"
+                          onClick={() => setSettings({ ...settings, activeProvider: prov })}
+                          className={`py-1.5 px-1 rounded-md font-medium transition cursor-pointer text-center ${
+                            isActive
+                              ? 'bg-[#4285F4] text-white shadow-sm'
+                              : 'text-[#8b949e] hover:text-[#f0f6fc] hover:bg-[#21262d]'
+                          }`}
+                        >
+                          {label}
+                        </button>
+                      );
+                    })}
+                  </div>
+                  <span className="text-[10px] text-[#8b949e] block">
+                    {settings.activeProvider === 'auto'
+                      ? '⚡ Auto failover: Gemini (free) → OpenAI (gpt-4o-mini) → Claude'
+                      : `Always evaluate with ${settings.activeProvider.toUpperCase()} first (with automatic backup failover).`}
+                  </span>
+                </div>
+
+                {/* 2. API Keys Configuration Box */}
+                <div className="p-3.5 rounded-xl bg-[#161b22] border border-[#30363d] space-y-3.5">
+                  <div className="flex items-center justify-between border-b border-[#30363d] pb-2">
+                    <span className="text-xs font-bold text-[#f0f6fc] flex items-center gap-1.5">
+                      <Key className="w-3.5 h-3.5 text-[#FBBC05]" />
+                      Provider API Keys
+                    </span>
+                    <span className="text-[10px] text-[#8b949e]">Configure any or all</span>
+                  </div>
+
+                  {/* Google Gemini */}
+                  <div className="space-y-1">
+                    <div className="flex items-center justify-between">
+                      <label className="text-[11px] font-semibold text-[#f0f6fc] flex items-center gap-1.5">
+                        Google Gemini
+                        <span className="text-[9px] px-1 py-0.2 rounded bg-[#34A853]/20 text-[#34A853] font-medium border border-[#34A853]/30">
+                          Free Tier
+                        </span>
+                      </label>
+                      <a
+                        href="https://aistudio.google.com/app/apikey"
+                        target="_blank"
+                        rel="noreferrer"
+                        className="text-[10px] text-[#4285F4] hover:underline flex items-center gap-0.5"
+                      >
+                        Get Free Key <ExternalLink className="w-2.5 h-2.5" />
+                      </a>
+                    </div>
+                    <div className="relative">
+                      <input
+                        type={showKeys.gemini ? 'text' : 'password'}
+                        value={settings.geminiApiKey || ''}
+                        onChange={(e) => setSettings({ ...settings, geminiApiKey: e.target.value })}
+                        placeholder="AIzaSy..."
+                        className="w-full px-2.5 py-1.5 pr-8 bg-[#0d1117] border border-[#30363d] rounded-lg text-xs text-[#f0f6fc] placeholder-[#8b949e] focus:outline-none focus:border-[#4285F4]"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => toggleShowKey('gemini')}
+                        className="absolute right-2 top-2 text-[#8b949e] hover:text-[#f0f6fc]"
+                      >
+                        {showKeys.gemini ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+                      </button>
+                    </div>
+                    <div className="flex items-center justify-between pt-0.5">
+                      <span className="text-[10px] text-[#8b949e]">Default: gemini-2.0-flash</span>
+                      <button
+                        type="button"
+                        onClick={() => handleTestProvider('gemini')}
+                        disabled={!settings.geminiApiKey || testStatuses.gemini?.loading}
+                        className="text-[10px] text-[#4285F4] hover:underline font-medium disabled:opacity-40 cursor-pointer"
+                      >
+                        {testStatuses.gemini?.loading ? 'Pinging...' : 'Test Key'}
+                      </button>
+                    </div>
+                    {testStatuses.gemini && (
+                      <div className={`p-1.5 rounded-lg text-[10px] flex items-center gap-1.5 ${
+                        testStatuses.gemini.ok
+                          ? 'bg-[#34A853]/15 text-[#34A853] border border-[#34A853]/30'
+                          : 'bg-[#EA4335]/15 text-[#EA4335] border border-[#EA4335]/30'
+                      }`}>
+                        {testStatuses.gemini.ok ? <CheckCircle className="w-3 h-3" /> : <AlertCircle className="w-3 h-3" />}
+                        <span>{testStatuses.gemini.message}</span>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* OpenAI */}
+                  <div className="space-y-1 pt-1 border-t border-[#30363d]">
+                    <div className="flex items-center justify-between">
+                      <label className="text-[11px] font-semibold text-[#f0f6fc] flex items-center gap-1.5">
+                        OpenAI
+                        <span className="text-[9px] px-1 py-0.2 rounded bg-[#4285F4]/20 text-[#4285F4] font-medium border border-[#4285F4]/30">
+                          gpt-4o-mini
+                        </span>
+                      </label>
+                      <a
+                        href="https://platform.openai.com/api-keys"
+                        target="_blank"
+                        rel="noreferrer"
+                        className="text-[10px] text-[#4285F4] hover:underline flex items-center gap-0.5"
+                      >
+                        Get Key <ExternalLink className="w-2.5 h-2.5" />
+                      </a>
+                    </div>
+                    <div className="relative">
+                      <input
+                        type={showKeys.openai ? 'text' : 'password'}
+                        value={settings.openaiApiKey || ''}
+                        onChange={(e) => setSettings({ ...settings, openaiApiKey: e.target.value })}
+                        placeholder="sk-proj-..."
+                        className="w-full px-2.5 py-1.5 pr-8 bg-[#0d1117] border border-[#30363d] rounded-lg text-xs text-[#f0f6fc] placeholder-[#8b949e] focus:outline-none focus:border-[#4285F4]"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => toggleShowKey('openai')}
+                        className="absolute right-2 top-2 text-[#8b949e] hover:text-[#f0f6fc]"
+                      >
+                        {showKeys.openai ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+                      </button>
+                    </div>
+                    <div className="flex items-center justify-between pt-0.5">
+                      <span className="text-[10px] text-[#8b949e]">Default: gpt-4o-mini</span>
+                      <button
+                        type="button"
+                        onClick={() => handleTestProvider('openai')}
+                        disabled={!settings.openaiApiKey || testStatuses.openai?.loading}
+                        className="text-[10px] text-[#4285F4] hover:underline font-medium disabled:opacity-40 cursor-pointer"
+                      >
+                        {testStatuses.openai?.loading ? 'Pinging...' : 'Test Key'}
+                      </button>
+                    </div>
+                    {testStatuses.openai && (
+                      <div className={`p-1.5 rounded-lg text-[10px] flex items-center gap-1.5 ${
+                        testStatuses.openai.ok
+                          ? 'bg-[#34A853]/15 text-[#34A853] border border-[#34A853]/30'
+                          : 'bg-[#EA4335]/15 text-[#EA4335] border border-[#EA4335]/30'
+                      }`}>
+                        {testStatuses.openai.ok ? <CheckCircle className="w-3 h-3" /> : <AlertCircle className="w-3 h-3" />}
+                        <span>{testStatuses.openai.message}</span>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Anthropic Claude */}
+                  <div className="space-y-1 pt-1 border-t border-[#30363d]">
+                    <div className="flex items-center justify-between">
+                      <label className="text-[11px] font-semibold text-[#f0f6fc] flex items-center gap-1.5">
+                        Anthropic Claude
+                        <span className="text-[9px] px-1 py-0.2 rounded bg-[#FBBC05]/20 text-[#FBBC05] font-medium border border-[#FBBC05]/30">
+                          Haiku / Sonnet
+                        </span>
+                      </label>
+                      <a
+                        href="https://console.anthropic.com/"
+                        target="_blank"
+                        rel="noreferrer"
+                        className="text-[10px] text-[#4285F4] hover:underline flex items-center gap-0.5"
+                      >
+                        Get Key <ExternalLink className="w-2.5 h-2.5" />
+                      </a>
+                    </div>
+                    <div className="relative">
+                      <input
+                        type={showKeys.claude ? 'text' : 'password'}
+                        value={settings.anthropicApiKey || ''}
+                        onChange={(e) => setSettings({ ...settings, anthropicApiKey: e.target.value })}
+                        placeholder="sk-ant-..."
+                        className="w-full px-2.5 py-1.5 pr-8 bg-[#0d1117] border border-[#30363d] rounded-lg text-xs text-[#f0f6fc] placeholder-[#8b949e] focus:outline-none focus:border-[#4285F4]"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => toggleShowKey('claude')}
+                        className="absolute right-2 top-2 text-[#8b949e] hover:text-[#f0f6fc]"
+                      >
+                        {showKeys.claude ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+                      </button>
+                    </div>
+                    <div className="flex items-center justify-between pt-0.5">
+                      <span className="text-[10px] text-[#8b949e]">Default: claude-3-5-haiku</span>
+                      <button
+                        type="button"
+                        onClick={() => handleTestProvider('claude')}
+                        disabled={!settings.anthropicApiKey || testStatuses.claude?.loading}
+                        className="text-[10px] text-[#4285F4] hover:underline font-medium disabled:opacity-40 cursor-pointer"
+                      >
+                        {testStatuses.claude?.loading ? 'Pinging...' : 'Test Key'}
+                      </button>
+                    </div>
+                    {testStatuses.claude && (
+                      <div className={`p-1.5 rounded-lg text-[10px] flex items-center gap-1.5 ${
+                        testStatuses.claude.ok
+                          ? 'bg-[#34A853]/15 text-[#34A853] border border-[#34A853]/30'
+                          : 'bg-[#EA4335]/15 text-[#EA4335] border border-[#EA4335]/30'
+                      }`}>
+                        {testStatuses.claude.ok ? <CheckCircle className="w-3 h-3" /> : <AlertCircle className="w-3 h-3" />}
+                        <span>{testStatuses.claude.message}</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Save Button */}
+                <div className="pt-2 flex gap-2">
+                  <button
+                    type="button"
+                    onClick={handleSaveSettings}
+                    className="flex-1 flex items-center justify-center gap-2 py-2.5 bg-[#4285F4] hover:bg-[#3367D6] text-white font-semibold text-xs rounded-xl shadow-md shadow-[#4285F4]/30 transition cursor-pointer"
+                  >
+                    <Save className="w-4 h-4" />
+                    <span>Save API Keys</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setViewMode('analysis')}
+                    className="px-4 py-2.5 bg-[#21262d] hover:bg-[#30363d] text-[#c9d1d9] font-medium text-xs rounded-xl border border-[#30363d] transition cursor-pointer"
+                  >
+                    Done
+                  </button>
                 </div>
               </div>
-            )}
-
-            {/* Initial Placeholder */}
-            {!result && !loading && !error && (
-              <div className="py-12 px-4 text-center space-y-3">
-                <div className="w-12 h-12 rounded-2xl bg-[#4285F4]/15 border border-[#4285F4]/30 text-[#4285F4] flex items-center justify-center mx-auto">
-                  <Sparkles className="w-6 h-6 text-[#FBBC05] fill-[#FBBC05]" />
+            ) : (
+              <>
+                {/* Context Card */}
+                <div className="p-3 rounded-xl bg-[#161b22] border border-[#30363d] flex items-center justify-between text-xs">
+                  <div className="flex items-center gap-2">
+                    <span className={`px-2 py-0.5 rounded-full font-medium ${getDifficultyBadge(context?.difficulty || 'Medium')}`}>
+                      {context?.difficulty || 'Medium'}
+                    </span>
+                    <span className="text-[#8b949e] font-mono">
+                      {context?.language || 'python3'}
+                    </span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={handleAnalyze}
+                    disabled={loading}
+                    className="flex items-center gap-1.5 px-3 py-1.5 bg-[#4285F4] hover:bg-[#3367D6] text-white font-medium rounded-lg shadow-sm shadow-[#4285F4]/30 transition disabled:opacity-50 cursor-pointer text-xs"
+                  >
+                    <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
+                    <span>{loading ? 'Evaluating...' : 'Analyze Code'}</span>
+                  </button>
                 </div>
-                <h3 className="font-semibold text-[#f0f6fc] text-sm">
-                  Ready to evaluate your solution
-                </h3>
-                <p className="text-xs text-[#8b949e] max-w-xs mx-auto leading-relaxed">
-                  Write your code in the LeetCode editor and click "Analyze Code" above. AlgoPulse will evaluate your Big-O complexities, score your approach, and sync with your dashboard.
-                </p>
-              </div>
-            )}
+
+                {/* Error Message */}
+                {error && (
+                  <div className="p-3.5 rounded-xl bg-[#EA4335]/15 border border-[#EA4335]/30 text-[#EA4335] text-xs flex gap-2.5">
+                    <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
+                    <div className="flex-1">
+                      <p className="font-semibold text-[#f0f6fc]">Analysis Failed</p>
+                      <p className="mt-0.5 leading-relaxed text-[#c9d1d9]">{error}</p>
+                      {(error.toLowerCase().includes('api key') || error.toLowerCase().includes('provider')) && (
+                        <button
+                          type="button"
+                          onClick={() => setViewMode('settings')}
+                          className="mt-2.5 inline-flex items-center gap-1.5 px-3 py-1.5 bg-[#4285F4] hover:bg-[#3367D6] text-white font-medium text-xs rounded-lg transition shadow-sm cursor-pointer"
+                        >
+                          <Key className="w-3.5 h-3.5" />
+                          <span>Configure API Keys Now</span>
+                        </button>
+                      )}
+                      {(error.toLowerCase().includes('reloaded') || error.toLowerCase().includes('refresh') || error.toLowerCase().includes('context invalidated')) && (
+                        <button
+                          type="button"
+                          onClick={() => window.location.reload()}
+                          className="mt-2.5 inline-flex items-center gap-1.5 px-3 py-1.5 bg-[#4285F4] hover:bg-[#3367D6] text-white font-medium text-xs rounded-lg transition shadow-sm cursor-pointer"
+                        >
+                          <RefreshCw className="w-3.5 h-3.5" />
+                          <span>Refresh Page (F5) to Reconnect</span>
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                {/* Initial Placeholder */}
+                {!result && !loading && !error && (
+                  <div className="py-12 px-4 text-center space-y-3">
+                    <div className="w-12 h-12 rounded-2xl bg-[#4285F4]/15 border border-[#4285F4]/30 text-[#4285F4] flex items-center justify-center mx-auto">
+                      <Sparkles className="w-6 h-6 text-[#FBBC05] fill-[#FBBC05]" />
+                    </div>
+                    <h3 className="font-semibold text-[#f0f6fc] text-sm">
+                      Ready to evaluate your solution
+                    </h3>
+                    <p className="text-xs text-[#8b949e] max-w-xs mx-auto leading-relaxed">
+                      Write your code in the LeetCode editor and click "Analyze Code" above. AlgoPulse will evaluate your Big-O complexities, score your approach, and sync with your dashboard.
+                    </p>
+                    <div className="pt-2">
+                      <button
+                        type="button"
+                        onClick={() => setViewMode('settings')}
+                        className="inline-flex items-center gap-1.5 px-3.5 py-1.5 bg-[#21262d] hover:bg-[#30363d] text-[#f0f6fc] border border-[#30363d] font-medium text-xs rounded-lg transition cursor-pointer"
+                      >
+                        <Key className="w-3.5 h-3.5 text-[#FBBC05]" />
+                        <span>Configure API Keys</span>
+                      </button>
+                    </div>
+                  </div>
+                )}
 
             {/* Loading State */}
             {loading && (
@@ -571,7 +960,9 @@ const AlgoPulseOverlayInner: React.FC = () => {
               </div>
             );
           })()}
-        </div>
+              </>
+            )}
+          </div>
 
           {/* Footer */}
           <div className="p-3 border-t border-[#30363d] bg-[#161b22] flex items-center justify-between text-xs text-[#8b949e]">
@@ -582,9 +973,9 @@ const AlgoPulseOverlayInner: React.FC = () => {
                 <span className="w-1.5 h-1.5 rounded-full bg-[#FBBC05]" />
                 <span className="w-1.5 h-1.5 rounded-full bg-[#34A853]" />
               </div>
-              <span className="text-[11px]">Powered by Google Gemini</span>
+              <span className="text-[11px]">Multi-AI (Gemini • OpenAI • Claude)</span>
             </div>
-            <span className="font-mono text-[10px] text-[#6e7681]">AlgoPulse v1.0</span>
+            <span className="font-mono text-[10px] text-[#6e7681]">AlgoPulse v1.2</span>
           </div>
         </div>
       )}
