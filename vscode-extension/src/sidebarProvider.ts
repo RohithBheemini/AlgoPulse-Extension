@@ -1,6 +1,6 @@
 import * as vscode from 'vscode';
 import { ProblemMetadata, AIAnalysisResult, ExtensionConfig, SyncSubmissionPayload, AIProvider } from './types';
-import { analyzeCodeWithMultiProvider } from './analyzer';
+import { analyzeCodeWithMultiProvider, sanitizeApiKey, testProviderKey } from './analyzer';
 import { syncSubmissionToDashboard } from './sync';
 
 export class AlgoPulseSidebarProvider implements vscode.WebviewViewProvider {
@@ -69,25 +69,39 @@ export class AlgoPulseSidebarProvider implements vscode.WebviewViewProvider {
             await config.update('activeProvider', data.settings.activeProvider || 'auto', vscode.ConfigurationTarget.Global);
           }
           if (data.settings.geminiApiKey !== undefined) {
-            await config.update('geminiApiKey', data.settings.geminiApiKey, vscode.ConfigurationTarget.Global);
+            const clean = sanitizeApiKey(data.settings.geminiApiKey);
+            await config.update('geminiApiKey', clean, vscode.ConfigurationTarget.Global);
           }
           if (data.settings.openaiApiKey !== undefined) {
-            await config.update('openaiApiKey', data.settings.openaiApiKey, vscode.ConfigurationTarget.Global);
+            const clean = sanitizeApiKey(data.settings.openaiApiKey);
+            await config.update('openaiApiKey', clean, vscode.ConfigurationTarget.Global);
           }
           if (data.settings.anthropicApiKey !== undefined) {
-            await config.update('anthropicApiKey', data.settings.anthropicApiKey, vscode.ConfigurationTarget.Global);
+            const clean = sanitizeApiKey(data.settings.anthropicApiKey);
+            await config.update('anthropicApiKey', clean, vscode.ConfigurationTarget.Global);
           }
           if (data.settings.dashboardUrl !== undefined) {
-            await config.update('dashboardUrl', data.settings.dashboardUrl, vscode.ConfigurationTarget.Global);
+            await config.update('dashboardUrl', data.settings.dashboardUrl ? data.settings.dashboardUrl.trim() : 'http://localhost:3000', vscode.ConfigurationTarget.Global);
           }
           if (data.settings.extensionToken !== undefined) {
-            await config.update('extensionToken', data.settings.extensionToken, vscode.ConfigurationTarget.Global);
+            await config.update('extensionToken', data.settings.extensionToken ? data.settings.extensionToken.trim() : '', vscode.ConfigurationTarget.Global);
           }
           if (data.settings.preferredModel !== undefined) {
-            await config.update('preferredModel', data.settings.preferredModel || 'auto', vscode.ConfigurationTarget.Global);
+            await config.update('preferredModel', data.settings.preferredModel ? data.settings.preferredModel.trim() : 'auto', vscode.ConfigurationTarget.Global);
           }
           vscode.window.showInformationMessage('AlgoPulse settings saved successfully!');
           this.postMessage({ type: 'SETTINGS_SAVED' });
+          break;
+        }
+        case 'TEST_PROVIDER_KEY': {
+          const provider = data.provider || 'gemini';
+          const cleanKey = sanitizeApiKey(data.apiKey);
+          const result = await testProviderKey(provider, cleanKey);
+          this.postMessage({
+            type: 'TEST_PROVIDER_RESULT',
+            provider,
+            result
+          });
           break;
         }
         case 'GET_INITIAL_DATA': {
@@ -172,9 +186,9 @@ export class AlgoPulseSidebarProvider implements vscode.WebviewViewProvider {
 
     const config = vscode.workspace.getConfiguration('algopulse');
     const activeProvider = config.get<AIProvider>('activeProvider') || 'auto';
-    const geminiApiKey = config.get<string>('geminiApiKey') || '';
-    const openaiApiKey = config.get<string>('openaiApiKey') || '';
-    const anthropicApiKey = config.get<string>('anthropicApiKey') || '';
+    const geminiApiKey = sanitizeApiKey(config.get<string>('geminiApiKey') || '');
+    const openaiApiKey = sanitizeApiKey(config.get<string>('openaiApiKey') || '');
+    const anthropicApiKey = sanitizeApiKey(config.get<string>('anthropicApiKey') || '');
     const dashboardUrl = config.get<string>('dashboardUrl') || 'http://localhost:3000';
     const extensionToken = config.get<string>('extensionToken') || '';
     const autoSync = config.get<boolean>('autoSync') !== false;
@@ -204,7 +218,7 @@ export class AlgoPulseSidebarProvider implements vscode.WebviewViewProvider {
         ignoreFocusOut: true
       });
       if (inputKey && inputKey.trim()) {
-        const trimmed = inputKey.trim();
+        const trimmed = sanitizeApiKey(inputKey);
         if (trimmed.startsWith('sk-ant-')) {
           await config.update('anthropicApiKey', trimmed, vscode.ConfigurationTarget.Global);
           extConfig.anthropicApiKey = trimmed;
@@ -558,16 +572,28 @@ export class AlgoPulseSidebarProvider implements vscode.WebviewViewProvider {
       </select>
     </div>
     <div class="input-group">
-      <label class="input-label">Google Gemini API Key</label>
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2px;">
+        <label class="input-label" style="margin-bottom: 0;">Google Gemini API Key</label>
+        <button id="testGeminiBtn" type="button" style="background: none; border: none; color: var(--blue); font-size: 10px; cursor: pointer; text-decoration: underline; padding: 0;">Test Key</button>
+      </div>
       <input type="password" id="apiKeyInput" class="input-field" placeholder="AIzaSy... (Free tier)" />
+      <div id="geminiTestStatus" style="font-size: 10px; margin-top: 3px; display: none;"></div>
     </div>
     <div class="input-group">
-      <label class="input-label">OpenAI API Key</label>
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2px;">
+        <label class="input-label" style="margin-bottom: 0;">OpenAI API Key</label>
+        <button id="testOpenAiBtn" type="button" style="background: none; border: none; color: var(--blue); font-size: 10px; cursor: pointer; text-decoration: underline; padding: 0;">Test Key</button>
+      </div>
       <input type="password" id="openaiApiKeyInput" class="input-field" placeholder="sk-... (gpt-4o-mini)" />
+      <div id="openaiTestStatus" style="font-size: 10px; margin-top: 3px; display: none;"></div>
     </div>
     <div class="input-group">
-      <label class="input-label">Anthropic Claude API Key</label>
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2px;">
+        <label class="input-label" style="margin-bottom: 0;">Anthropic Claude API Key</label>
+        <button id="testClaudeBtn" type="button" style="background: none; border: none; color: var(--blue); font-size: 10px; cursor: pointer; text-decoration: underline; padding: 0;">Test Key</button>
+      </div>
       <input type="password" id="claudeApiKeyInput" class="input-field" placeholder="sk-ant-... (3.5 Haiku)" />
+      <div id="claudeTestStatus" style="font-size: 10px; margin-top: 3px; display: none;"></div>
     </div>
     <div class="input-group">
       <label class="input-label">Model Override (Default: auto)</label>
@@ -792,9 +818,41 @@ export class AlgoPulseSidebarProvider implements vscode.WebviewViewProvider {
     setupHint('revealHint2Btn', 'hint2Content');
     setupHint('revealHint3Btn', 'hint3Content');
 
+    function bindTestKey(btnId, inputId, statusId, provider) {
+      const btn = document.getElementById(btnId);
+      if (!btn) return;
+      btn.addEventListener('click', () => {
+        const apiKey = document.getElementById(inputId).value;
+        const statusEl = document.getElementById(statusId);
+        if (!apiKey || !apiKey.trim()) {
+          statusEl.style.display = 'block';
+          statusEl.style.color = 'var(--yellow)';
+          statusEl.textContent = 'Please enter an API key first.';
+          return;
+        }
+        statusEl.style.display = 'block';
+        statusEl.style.color = 'var(--text-muted)';
+        statusEl.textContent = 'Pinging ' + provider + '...';
+        vscode.postMessage({ type: 'TEST_PROVIDER_KEY', provider, apiKey });
+      });
+    }
+    bindTestKey('testGeminiBtn', 'apiKeyInput', 'geminiTestStatus', 'gemini');
+    bindTestKey('testOpenAiBtn', 'openaiApiKeyInput', 'openaiTestStatus', 'openai');
+    bindTestKey('testClaudeBtn', 'claudeApiKeyInput', 'claudeTestStatus', 'claude');
+
     window.addEventListener('message', (event) => {
       const message = event.data;
       switch (message.type) {
+        case 'TEST_PROVIDER_RESULT': {
+          const statusId = message.provider === 'gemini' ? 'geminiTestStatus' : (message.provider === 'openai' ? 'openaiTestStatus' : 'claudeTestStatus');
+          const statusEl = document.getElementById(statusId);
+          if (statusEl) {
+            statusEl.style.display = 'block';
+            statusEl.style.color = message.result.success ? 'var(--green)' : 'var(--red)';
+            statusEl.textContent = (message.result.success ? '✓ ' : '✕ ') + message.result.message;
+          }
+          break;
+        }
         case 'INIT_CONFIG': {
           if (message.config) {
             if (message.config.activeProvider) {

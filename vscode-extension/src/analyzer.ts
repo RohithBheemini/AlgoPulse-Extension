@@ -222,13 +222,37 @@ export function extractAndNormalizeJSON(rawText: string, providerName: string, m
 }
 
 // ============================================================================
+// API Key Sanitizer
+// ============================================================================
+/**
+ * Thoroughly sanitizes an AI provider API key by stripping:
+ * - Surrounding quotes or backticks (e.g. copied from .env or JSON)
+ * - Non-ASCII or invisible control characters (zero-width spaces, UTF-8 BOM, stray bytes)
+ * - Trailing punctuation (commas, semicolons)
+ * - Leading and trailing whitespace
+ */
+export function sanitizeApiKey(key?: string): string {
+  if (!key || typeof key !== 'string') return '';
+  let cleaned = key.trim();
+  // Strip surrounding quotes or backticks
+  cleaned = cleaned.replace(/^["'`]|["'`]$/g, '').trim();
+  // Strip non-printable / non-ASCII characters (including zero-width spaces, UTF-8 BOM, stray bytes like [196, 129])
+  cleaned = cleaned.replace(/[^\x21-\x7E]/g, '').trim();
+  // Strip common trailing punctuation (comma, semicolon)
+  cleaned = cleaned.replace(/[,;]+$/, '').trim();
+  return cleaned;
+}
+
+// ============================================================================
 // Google Gemini Adapter
 // ============================================================================
 let cachedGeminiModel: string | null = null;
 
 export async function listAvailableGeminiModels(apiKey: string): Promise<string[]> {
+  const cleanKey = sanitizeApiKey(apiKey);
+  if (!cleanKey) return [];
   try {
-    const listUrl = `https://generativelanguage.googleapis.com/v1beta/models?key=${encodeURIComponent(apiKey.trim())}`;
+    const listUrl = `https://generativelanguage.googleapis.com/v1beta/models?key=${encodeURIComponent(cleanKey)}`;
     const res = await fetch(listUrl);
     if (res.ok) {
       const data: any = await res.json();
@@ -249,6 +273,7 @@ export async function listAvailableGeminiModels(apiKey: string): Promise<string[
 }
 
 async function resolveGeminiCandidateModels(apiKey: string, preferredModel = 'auto'): Promise<string[]> {
+  const cleanKey = sanitizeApiKey(apiKey);
   const cleanPreferred = preferredModel && preferredModel !== 'auto' && preferredModel.trim().length > 0
     ? preferredModel.trim()
     : null;
@@ -262,7 +287,7 @@ async function resolveGeminiCandidateModels(apiKey: string, preferredModel = 'au
     'gemini-pro'
   ];
 
-  const liveModels = await listAvailableGeminiModels(apiKey);
+  const liveModels = await listAvailableGeminiModels(cleanKey);
   const pool = liveModels.length > 0 ? liveModels : safeFallbacks;
 
   const sorted = [...pool].sort((a, b) => {
@@ -299,8 +324,12 @@ export async function analyzeWithGemini(
   apiKey: string,
   preferredModel = 'auto'
 ): Promise<AIAnalysisResult> {
+  const cleanKey = sanitizeApiKey(apiKey);
+  if (!cleanKey) {
+    throw new Error('Gemini API key is not configured or empty.');
+  }
   const promptText = buildUserPrompt(metadata);
-  const candidateModels = await resolveGeminiCandidateModels(apiKey, preferredModel);
+  const candidateModels = await resolveGeminiCandidateModels(cleanKey, preferredModel);
 
   let lastErrorMsg = 'Failed to communicate with Gemini API';
   let responseData: any = null;
@@ -308,7 +337,7 @@ export async function analyzeWithGemini(
 
   for (const model of candidateModels) {
     try {
-      const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${encodeURIComponent(apiKey.trim())}`;
+      const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${encodeURIComponent(cleanKey)}`;
 
       const res = await fetch(endpoint, {
         method: 'POST',
@@ -491,15 +520,16 @@ export async function analyzeWithClaude(
 // Provider Key Test Helper
 // ============================================================================
 export async function testProviderKey(provider: 'gemini' | 'openai' | 'claude', apiKey: string): Promise<{ success: boolean; message: string; model?: string }> {
-  if (!apiKey || !apiKey.trim()) {
+  const cleanKey = sanitizeApiKey(apiKey);
+  if (!cleanKey) {
     return { success: false, message: 'API key is empty.' };
   }
 
   if (provider === 'gemini') {
     try {
-      const models = await resolveGeminiCandidateModels(apiKey);
+      const models = await resolveGeminiCandidateModels(cleanKey);
       const testModel = models[0] || 'gemini-2.0-flash';
-      const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${testModel}:generateContent?key=${encodeURIComponent(apiKey.trim())}`;
+      const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${testModel}:generateContent?key=${encodeURIComponent(cleanKey)}`;
       const res = await fetch(endpoint, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -522,7 +552,7 @@ export async function testProviderKey(provider: 'gemini' | 'openai' | 'claude', 
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${apiKey.trim()}`
+          'Authorization': `Bearer ${cleanKey}`
         },
         body: JSON.stringify({
           model: testModel,
@@ -547,7 +577,7 @@ export async function testProviderKey(provider: 'gemini' | 'openai' | 'claude', 
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'x-api-key': apiKey.trim(),
+          'x-api-key': cleanKey,
           'anthropic-version': '2023-06-01'
         },
         body: JSON.stringify({
@@ -581,14 +611,18 @@ export async function analyzeCodeWithMultiProvider(
 
   const available: Array<{ id: 'gemini' | 'openai' | 'claude'; key: string }> = [];
 
-  if (config.geminiApiKey && config.geminiApiKey.trim()) {
-    available.push({ id: 'gemini', key: config.geminiApiKey.trim() });
+  const geminiKey = sanitizeApiKey(config.geminiApiKey);
+  const openaiKey = sanitizeApiKey(config.openaiApiKey);
+  const claudeKey = sanitizeApiKey(config.anthropicApiKey);
+
+  if (geminiKey) {
+    available.push({ id: 'gemini', key: geminiKey });
   }
-  if (config.openaiApiKey && config.openaiApiKey.trim()) {
-    available.push({ id: 'openai', key: config.openaiApiKey.trim() });
+  if (openaiKey) {
+    available.push({ id: 'openai', key: openaiKey });
   }
-  if (config.anthropicApiKey && config.anthropicApiKey.trim()) {
-    available.push({ id: 'claude', key: config.anthropicApiKey.trim() });
+  if (claudeKey) {
+    available.push({ id: 'claude', key: claudeKey });
   }
 
   if (available.length === 0) {
